@@ -10,136 +10,127 @@
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <header class="top">
-    <div>
-      <p class="eyebrow">Open-source naming tool</p>
+  <div class="app">
+    <header class="mast">
       <h1>Startup Name Generator</h1>
-      <p class="sub">Describe what you’re building. We’ll invent names, score them, and check if you can use them.</p>
-    </div>
-    <div class="run-meta" id="runMeta">No session yet</div>
-  </header>
+      <p class="lede">Tell us what you’re building. We’ll invent names and check whether you can use them.</p>
+    </header>
 
-  <main class="layout">
-    <section class="panel form-panel">
+    <section class="brief" id="brief">
       <form id="runForm">
-        <label class="question">
-          <span class="q-label">What are you building?</span>
-          <textarea name="building" rows="3" required placeholder="A website that lets people visualize furniture inside their home before buying."></textarea>
+        <label class="field primary-field">
+          <span class="label">What are you building?</span>
+          <textarea
+            name="building"
+            id="building"
+            rows="3"
+            required
+            placeholder="A website that lets people visualize furniture inside their home before buying."
+          ></textarea>
         </label>
 
-        <label class="question">
-          <span class="q-label">Who is it for?</span>
-          <textarea name="audience" rows="2" placeholder="Homeowners buying furniture."></textarea>
-        </label>
-
-        <label class="question">
-          <span class="q-label">What brands do you like?</span>
-          <input name="liked_brands" type="text" placeholder="Airbnb, Notion, Houzz" />
-        </label>
-
-        <label class="question">
-          <span class="q-label">What should the name avoid?</span>
-          <textarea name="avoid" rows="2" placeholder="AI-sounding names. Enterprise. Corporate. Difficult pronunciation."></textarea>
-        </label>
-
-        <details class="advanced">
-          <summary>Advanced</summary>
-          <div class="advanced-body">
-            <div class="row">
-              <label>Max characters
-                <input name="max_length" type="number" min="4" max="20" value="12" />
-              </label>
-              <label>Generate count
-                <input name="generate_count" type="number" min="50" max="10000" value="400" />
-              </label>
-            </div>
-            <label>Domain extensions
-              <input name="extensions" value=".com, .app, .co" />
+        <details class="disclosure" id="moreAbout">
+          <summary>More about your brand</summary>
+          <div class="disclosure-body">
+            <label class="field">
+              <span class="label">Who is it for?</span>
+              <input name="audience" type="text" placeholder="Homeowners buying furniture" />
             </label>
-            <div class="row">
-              <label>Domain-check top N
-                <input name="domain_check_top" type="number" min="0" max="2000" value="40" />
-              </label>
-              <label>Conflict-check top N
-                <input name="conflict_check_top" type="number" min="0" max="500" value="40" />
-              </label>
-            </div>
-
-            <fieldset class="byok">
-              <legend>Optional AI creativity (BYOK)</legend>
-              <p class="byok-note">
-                Local generation always runs. AI is only for extra creative directions and names.
-                Your key stays in <strong>browser sessionStorage</strong> and is sent to this app’s server
-                in request headers (never the URL), then discarded — never stored in the database or logs.
-              </p>
-              <label>Provider
-                <select id="llmProvider" name="llm_provider">
-                  <option value="anthropic">Anthropic</option>
-                  <option value="openai">OpenAI</option>
-                  <option value="xai">xAI</option>
-                  <option value="gemini">Gemini</option>
-                </select>
-              </label>
-              <label>API key
-                <input id="llmKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key…" />
-              </label>
-              <label>Model <span class="hint">(optional)</span>
-                <input id="llmModel" type="text" placeholder="provider default" />
-              </label>
-              <div class="actions inline">
-                <button type="button" id="btnSaveKey" class="ghost">Save key for this session</button>
-                <button type="button" id="btnClearKey" class="ghost">Clear key</button>
-              </div>
-              <p class="byok-status" id="byokStatus">AI key: not set</p>
-            </fieldset>
+            <label class="field">
+              <span class="label">Brands you like</span>
+              <input name="liked_brands" type="text" placeholder="Airbnb, Notion, Houzz" />
+            </label>
+            <label class="field">
+              <span class="label">What to avoid</span>
+              <input name="avoid" type="text" placeholder="AI-sounding, enterprise, hard to pronounce" />
+            </label>
           </div>
         </details>
 
-        <div class="actions primary">
-          <button type="submit" id="btnCreate" class="generate">Generate</button>
-          <a id="btnExport" class="button ghost disabled" href="#">Export CSV</a>
+        <details class="disclosure" id="advanced">
+          <summary>Advanced</summary>
+          <div class="disclosure-body">
+            <div class="field-row">
+              <label class="field">
+                <span class="label">Max characters</span>
+                <input name="max_length" type="number" min="4" max="20" value="12" />
+              </label>
+              <label class="field">
+                <span class="label">How many names</span>
+                <input name="generate_count" type="number" min="50" max="10000" value="400" />
+              </label>
+            </div>
+            <label class="field">
+              <span class="label">Domain endings</span>
+              <input name="extensions" value=".com, .app, .co" />
+            </label>
+
+            <div class="ai-block">
+              <p class="ai-title">Optional AI creativity</p>
+              <p class="ai-note">
+                Local naming always runs. Add your own key only if you want extra creative directions.
+                The key stays in this browser tab and is never saved on the server.
+              </p>
+              <div class="field-row">
+                <label class="field">
+                  <span class="label">Provider</span>
+                  <select id="llmProvider">
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="xai">xAI</option>
+                    <option value="gemini">Gemini</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="label">Model</span>
+                  <input id="llmModel" type="text" placeholder="Default" />
+                </label>
+              </div>
+              <label class="field">
+                <span class="label">API key</span>
+                <input id="llmKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key — saved for this tab only" />
+              </label>
+              <div class="ai-actions">
+                <button type="button" id="btnClearKey" class="text-btn">Clear key</button>
+                <span class="ai-status" id="byokStatus">No AI key</span>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="primary-action">
+          <button type="submit" id="btnCreate">Generate</button>
         </div>
       </form>
 
-      <div class="status" id="status">Ready when you are.</div>
-
-      <div class="saved">
-        <h2>Saved sessions</h2>
-        <ul id="runList" class="run-list"></ul>
+      <div class="progress" id="progress" hidden>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        <p class="progress-label" id="status">Ready</p>
       </div>
     </section>
 
-    <section class="panel results-panel">
-      <div id="directions" class="directions" hidden></div>
+    <section class="results" id="resultsSection" hidden>
+      <div id="directions" class="directions"></div>
 
-      <div class="results-head">
-        <h2>Compare names</h2>
-        <p class="hint">Sorted to answer: can I actually use this?</p>
-      </div>
-
-      <div class="filters">
-        <input id="search" type="search" placeholder="Search names…" />
-        <label><input type="checkbox" id="filterCom" /> .com available</label>
-        <label><input type="checkbox" id="filterAny" /> Any domain available</label>
-        <label><input type="checkbox" id="filterLow" /> Low conflict</label>
-        <label><input type="checkbox" id="filterRadioPass" /> Radio pass</label>
-        <label><input type="checkbox" id="filterFav" /> Favorites</label>
-        <label>Min score
-          <input id="minScore" type="number" min="0" max="100" value="0" />
+      <div class="results-toolbar">
+        <input id="search" type="search" placeholder="Search" aria-label="Search names" />
+        <label class="toggle">
+          <input type="checkbox" id="filterUsable" />
+          <span>Usable only</span>
         </label>
+        <a id="btnExport" class="text-btn" href="#" hidden>Export CSV</a>
       </div>
 
       <div class="table-wrap">
         <table id="results">
           <thead>
             <tr>
-              <th data-sort="favorite">★</th>
+              <th data-sort="favorite" class="col-fav">★</th>
               <th data-sort="name">Name</th>
               <th data-sort="total_score">Score</th>
               <th data-sort="com">Domain</th>
               <th data-sort="conflict_level">Conflict</th>
-              <th data-sort="radio_result">Radio test</th>
-              <th data-sort="method">Source</th>
+              <th data-sort="radio_result">Radio</th>
               <th>Notes</th>
             </tr>
           </thead>
@@ -148,7 +139,12 @@
       </div>
       <p class="count" id="count"></p>
     </section>
-  </main>
+
+    <details class="disclosure history" id="history">
+      <summary>Previous sessions</summary>
+      <ul id="runList" class="run-list"></ul>
+    </details>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>

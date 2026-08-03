@@ -8,15 +8,28 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const statusEl = $("status");
   const tbody = document.querySelector("#results tbody");
 
-  function setStatus(msg) {
-    statusEl.textContent = msg;
+  function setBusy(busy, label = "") {
+    const progress = $("progress");
+    const bar = $("progressBar");
+    progress.hidden = false;
+    progress.dataset.busy = busy ? "true" : "false";
+    $("status").textContent = label;
+    if (!busy) {
+      bar.style.width = "100%";
+      bar.style.animation = "none";
+    } else {
+      bar.style.width = "";
+      bar.style.animation = "";
+    }
   }
 
-  function slugLen(name) {
-    return String(name || "").replace(/[^a-zA-Z0-9]/g, "").length;
+  function setIdleMessage(msg) {
+    $("progress").hidden = !msg;
+    $("progress").dataset.busy = "false";
+    $("status").textContent = msg || "";
+    $("progressBar").style.width = msg ? "100%" : "0%";
   }
 
   function domainStatus(c, ext) {
@@ -33,47 +46,45 @@
     if (!parts.length) return "—";
     return parts
       .map((p) => `<span class="status-pill ${p.st}">${p.ext} ${p.st}</span>`)
-      .join(" ");
+      .join("");
   }
 
   function scoreOf(c, key) {
     if (key === "total_score") return Number(c.total_score || 0);
-    if (key === "radio_score") return Number(c.radio_score ?? -1);
     if (key === "name") return String(c.name || "").toLowerCase();
     if (key === "conflict_level") return String(c.conflict_level || "");
-    if (key === "method") return String(c.method || "");
     if (key === "radio_result") return String(c.radio_result || "");
     if (key === "favorite") return c.favorite ? 1 : 0;
     if (key === "com") return domainStatus(c, ".com");
-    return Number((c.scores || {})[key] || 0);
+    return 0;
+  }
+
+  function isUsable(c) {
+    const comOk = domainStatus(c, ".com") === "available";
+    const anyOk = Object.values(c.domains || {}).some((d) => d.status === "available");
+    const conflictOk =
+      !c.conflict_level ||
+      c.conflict_level === "Not checked" ||
+      String(c.conflict_level).startsWith("Low");
+    const radioOk = !c.radio_result || c.radio_result === "pass";
+    return (comOk || anyOk) && conflictOk && radioOk;
   }
 
   function filtered() {
     const q = $("search").value.trim().toLowerCase();
-    const minScore = Number($("minScore").value || 0);
-    const needCom = $("filterCom").checked;
-    const needAny = $("filterAny").checked;
-    const lowOnly = $("filterLow").checked;
-    const radioPass = $("filterRadioPass").checked;
-    const favOnly = $("filterFav").checked;
-
+    const usableOnly = $("filterUsable").checked;
     let rows = state.candidates.slice();
     rows = rows.filter((c) => {
-      if (favOnly && !c.favorite) return false;
-      if (radioPass && c.radio_result !== "pass") return false;
-      if (Number(c.total_score || 0) < minScore) return false;
-      if (q && !String(c.name).toLowerCase().includes(q) && !String(c.pronunciation).toLowerCase().includes(q)) {
+      if (usableOnly && !isUsable(c)) return false;
+      if (
+        q &&
+        !String(c.name).toLowerCase().includes(q) &&
+        !String(c.pronunciation).toLowerCase().includes(q)
+      ) {
         return false;
       }
-      if (needCom && domainStatus(c, ".com") !== "available") return false;
-      if (needAny) {
-        const statuses = Object.values(c.domains || {}).map((d) => d.status);
-        if (!statuses.includes("available")) return false;
-      }
-      if (lowOnly && !String(c.conflict_level || "").startsWith("Low")) return false;
       return true;
     });
-
     rows.sort((a, b) => {
       const av = scoreOf(a, state.sortKey);
       const bv = scoreOf(b, state.sortKey);
@@ -102,16 +113,27 @@
     if (c.radio_explanation) bits.push(c.radio_explanation);
     if (c.conflict_notes) bits.push(c.conflict_notes);
     const alts = (c.radio_spellings || []).join(", ");
-    if (alts) bits.push(`Also sounds like: ${alts}`);
+    if (alts) bits.push(`Also: ${alts}`);
     return bits.join(" · ") || "—";
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function escapeAttr(str) {
+    return escapeHtml(str).replaceAll("'", "&#39;");
   }
 
   function renderDirections(run, candidates) {
     const box = $("directions");
     const dirs = (run && run.llm && run.llm.directions) || [];
     const rows = candidates || [];
-    if (!dirs.length && !rows.length) {
-      box.hidden = true;
+    if (!rows.length) {
       box.innerHTML = "";
       return;
     }
@@ -119,11 +141,7 @@
     const byDir = new Map();
     for (const d of dirs) {
       const name = d.name || "Ideas";
-      byDir.set(name, {
-        name,
-        description: d.description || "",
-        names: [],
-      });
+      byDir.set(name, { name, description: d.description || "", names: [] });
     }
     for (const c of rows) {
       const label = c.direction || "Other ideas";
@@ -159,42 +177,25 @@
       })
       .filter(Boolean);
 
-    box.hidden = !cards.length;
-    box.innerHTML = cards.length
-      ? `<div class="results-head"><h2>Naming directions</h2><p class="hint">Creative paths first — details below.</p></div>${cards.join("")}`
-      : "";
+    box.innerHTML = cards.join("");
   }
 
   function renderTable() {
     const rows = filtered();
     tbody.innerHTML = rows
-      .map((c) => {
-        const sourceClass = c.method === "llm" ? "src-llm" : "src-local";
-        return `<tr>
+      .map(
+        (c) => `<tr>
         <td class="fav ${c.favorite ? "on" : ""}" data-name="${escapeAttr(c.name)}">${c.favorite ? "★" : "☆"}</td>
-        <td><strong>${escapeHtml(c.name)}</strong><div class="mini hint">${escapeHtml(c.pronunciation || "")}</div></td>
+        <td class="name-cell"><strong>${escapeHtml(c.name)}</strong><div class="pron">${escapeHtml(c.pronunciation || "")}</div></td>
         <td>${Number(c.total_score || 0).toFixed(1)}</td>
         <td><div class="domain-stack">${bestDomainSummary(c)}</div></td>
         <td class="${conflictClass(c.conflict_level)}">${escapeHtml(c.conflict_level || "—")}</td>
         <td class="radio-${c.radio_result || ""}" title="${escapeAttr(c.radio_explanation || "")}">${escapeHtml(radioLabel(c))}</td>
-        <td><span class="src ${sourceClass}">${escapeHtml(c.method || "")}</span></td>
         <td class="notes">${escapeHtml(notesFor(c))}</td>
-      </tr>`;
-      })
+      </tr>`,
+      )
       .join("");
-    $("count").textContent = `${rows.length} shown / ${state.candidates.length} total`;
-  }
-
-  function escapeHtml(str) {
-    return String(str)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
-  }
-
-  function escapeAttr(str) {
-    return escapeHtml(str).replaceAll("'", "&#39;");
+    $("count").textContent = `${rows.length} of ${state.candidates.length}`;
   }
 
   const BYOK = {
@@ -211,13 +212,22 @@
     };
   }
 
+  function persistByokFromFields() {
+    const provider = $("llmProvider").value;
+    const key = $("llmKey").value.trim();
+    const model = $("llmModel").value.trim();
+    sessionStorage.setItem(BYOK.provider, provider);
+    if (key) sessionStorage.setItem(BYOK.key, key);
+    if (model) sessionStorage.setItem(BYOK.model, model);
+    else sessionStorage.removeItem(BYOK.model);
+    refreshByokStatus();
+  }
+
   function refreshByokStatus() {
     const { provider, key, model } = readByok();
     $("llmProvider").value = provider;
-    $("llmModel").value = model;
-    $("byokStatus").textContent = key
-      ? `AI key: set for this session (${provider}${model ? ", " + model : ""})`
-      : "AI key: not set — local generation still works";
+    if (!$("llmKey").value) $("llmModel").value = model;
+    $("byokStatus").textContent = key ? `Key set · ${provider}` : "No AI key";
   }
 
   function llmHeaders() {
@@ -249,28 +259,32 @@
     return res;
   }
 
+  function showResults() {
+    document.body.classList.add("has-results");
+    $("resultsSection").hidden = false;
+  }
+
   function setActiveRun(run, candidates) {
     state.runId = run.id;
     state.run = run;
-    state.candidates = candidates || state.candidates || [];
-    const building = run.building || run.category || "";
-    $("runMeta").textContent = `Session ${run.id} · ${run.status}`;
+    state.candidates = candidates || [];
     const exportBtn = $("btnExport");
     exportBtn.href = `/api/runs/${run.id}/export.csv`;
-    exportBtn.classList.remove("disabled");
+    exportBtn.hidden = false;
+    showResults();
     renderDirections(run, state.candidates);
     renderTable();
-    if (building) {
-      // keep form as the user left it
-    }
   }
 
   async function loadRun(runId) {
-    setStatus(`Loading session ${runId}…`);
-    const data = await api(`/api/runs/${runId}`);
-    setActiveRun(data.run, data.candidates || []);
-    const note = (data.run.llm && data.run.llm.note) || "";
-    setStatus(`Loaded ${state.candidates.length} names.${note ? " " + note : ""}`);
+    setBusy(true, "Loading previous session…");
+    try {
+      const data = await api(`/api/runs/${runId}`);
+      setActiveRun(data.run, data.candidates || []);
+      setIdleMessage(`${state.candidates.length} names`);
+    } catch (err) {
+      setIdleMessage(`Couldn’t load session: ${err.message}`);
+    }
   }
 
   async function refreshRuns() {
@@ -280,14 +294,17 @@
       (data.runs || [])
         .map((r) => {
           const label = escapeHtml(r.building || r.category || r.id);
-          return `<li data-id="${r.id}"><strong>${escapeHtml(r.id)}</strong> — ${label} <span class="hint">(${escapeHtml(r.status)})</span></li>`;
+          return `<li data-id="${r.id}">${label} <span class="hint">· ${escapeHtml(r.status)}</span></li>`;
         })
-        .join("") || "<li class='hint'>No saved sessions yet</li>";
+        .join("") || "<li class='hint'>No previous sessions</li>";
   }
 
   $("runForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    persistByokFromFields();
     const fd = new FormData(e.target);
+    const domainTop = 40;
+    const conflictTop = 40;
     const payload = {
       building: String(fd.get("building") || ""),
       audience: String(fd.get("audience") || ""),
@@ -299,38 +316,52 @@
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
-      domain_check_top: Number(fd.get("domain_check_top")),
-      conflict_check_top: Number(fd.get("conflict_check_top")),
-      run_pipeline: true,
+      domain_check_top: domainTop,
+      conflict_check_top: conflictTop,
+      run_pipeline: false,
     };
 
     try {
       $("btnCreate").disabled = true;
-      const byok = readByok();
-      setStatus(
-        byok.key
-          ? `Generating names, scoring, checking domains & conflicts (AI creativity via ${byok.provider})…`
-          : "Generating names, scoring, checking domains & conflicts…",
-      );
-      const data = await api("/api/runs", {
+      setBusy(true, "Generating names…");
+
+      const created = await api("/api/runs", {
         method: "POST",
         body: JSON.stringify(payload),
+      });
+      const runId = created.run.id;
+
+      setBusy(true, "Scoring and radio-testing…");
+      const gen = await api(`/api/runs/${runId}/generate`, {
+        method: "POST",
+        body: "{}",
         headers: llmHeaders(),
       });
+
+      setBusy(true, "Checking domains…");
+      await api(`/api/runs/${runId}/check-domains`, {
+        method: "POST",
+        body: JSON.stringify({ top_n: domainTop, resume: true }),
+      });
+
+      setBusy(true, "Checking conflicts…");
+      await api(`/api/runs/${runId}/check-conflicts`, {
+        method: "POST",
+        body: JSON.stringify({ top_n: conflictTop }),
+      });
+
+      setBusy(true, "Preparing results…");
+      const data = await api(`/api/runs/${runId}`);
       setActiveRun(data.run, data.candidates || []);
       await refreshRuns();
-      const r = data.result || {};
-      const domains = r.domains || {};
-      const conflicts = r.conflicts || {};
-      setStatus(
-        `Done — ${r.generated || state.candidates.length} names` +
-          (r.llm ? `, ${r.llm} AI` : "") +
-          `, domains ${domains.checked || 0}, conflicts ${conflicts.checked || 0}.` +
-          (r.llm_note ? ` ${r.llm_note}` : "") +
-          (r.llm_error ? ` AI: ${r.llm_error}` : ""),
-      );
+
+      const r = gen.result || {};
+      const bits = [`${state.candidates.length} names`];
+      if (r.llm) bits.push(`${r.llm} from AI`);
+      setIdleMessage(bits.join(" · "));
+      $("building").blur();
     } catch (err) {
-      setStatus(`Error: ${err.message}`);
+      setIdleMessage(`Something went wrong: ${err.message}`);
     } finally {
       $("btnCreate").disabled = false;
     }
@@ -351,7 +382,7 @@
       renderDirections(state.run, state.candidates);
       renderTable();
     } catch (err) {
-      setStatus(`Error: ${err.message}`);
+      setIdleMessage(`Couldn’t update favorite: ${err.message}`);
     }
   });
 
@@ -368,7 +399,7 @@
     });
   });
 
-  ["search", "filterCom", "filterAny", "filterLow", "filterRadioPass", "filterFav", "minScore"].forEach((id) => {
+  ["search", "filterUsable"].forEach((id) => {
     $(id).addEventListener("input", renderTable);
     $(id).addEventListener("change", renderTable);
   });
@@ -376,24 +407,16 @@
   $("runList").addEventListener("click", (e) => {
     const li = e.target.closest("li[data-id]");
     if (!li) return;
-    loadRun(li.dataset.id).catch((err) => setStatus(`Error: ${err.message}`));
+    loadRun(li.dataset.id);
   });
 
-  $("btnSaveKey").addEventListener("click", () => {
-    const provider = $("llmProvider").value;
-    const key = $("llmKey").value.trim();
-    const model = $("llmModel").value.trim();
-    if (!key) {
-      setStatus("Paste an API key before saving.");
-      return;
-    }
-    sessionStorage.setItem(BYOK.provider, provider);
-    sessionStorage.setItem(BYOK.key, key);
-    if (model) sessionStorage.setItem(BYOK.model, model);
-    else sessionStorage.removeItem(BYOK.model);
-    $("llmKey").value = "";
-    refreshByokStatus();
-    setStatus("Saved AI key for this browser tab. Clear key removes it.");
+  // Autosave key as the user types/pastes — no separate Save control
+  ["llmKey", "llmProvider", "llmModel"].forEach((id) => {
+    $(id).addEventListener("change", persistByokFromFields);
+    $(id).addEventListener("blur", persistByokFromFields);
+  });
+  $("llmKey").addEventListener("input", () => {
+    if ($("llmKey").value.trim().length > 8) persistByokFromFields();
   });
 
   $("btnClearKey").addEventListener("click", () => {
@@ -403,16 +426,10 @@
     $("llmKey").value = "";
     $("llmModel").value = "";
     refreshByokStatus();
-    setStatus("Cleared AI key from this browser session.");
-  });
-
-  $("llmProvider").addEventListener("change", () => {
-    const existing = sessionStorage.getItem(BYOK.key);
-    if (existing) sessionStorage.setItem(BYOK.provider, $("llmProvider").value);
-    refreshByokStatus();
+    setIdleMessage("AI key cleared");
   });
 
   refreshByokStatus();
-  setStatus("Ready — answer a few questions and hit Generate.");
-  refreshRuns().catch((err) => setStatus(`Error loading sessions: ${err.message}`));
+  $("progress").hidden = true;
+  refreshRuns().catch(() => {});
 })();
