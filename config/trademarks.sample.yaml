@@ -1,0 +1,49 @@
+# ============================================================================
+# SAMPLE DATA ONLY. NOT A TRADEMARK DATABASE.
+# ============================================================================
+#
+# This is a tiny demonstration dataset (a few dozen famous marks) so that
+# contributors can clone the repository and run the app immediately. It is
+# NOT a meaningful screen of the USPTO register and must not be relied on.
+#
+# For production-quality screening, import the official USPTO bulk data:
+#
+#   python tools/import_uspto.py apc*.zip -o data/uspto-trademarks.json
+#   TRADEMARK_DATA_PATH=data/uspto-trademarks.json
+#
+# The screening engine consumes any dataset in this format (YAML or JSON):
+#   meta:  { name, sample (bool), source }
+#   marks: [{ mark, status: live|pending|dead, classes: [int], owner }]
+
+meta:
+  name: Built-in sample dataset
+  sample: true
+  source: A handful of famous marks from public USPTO records, for demo only
+
+marks:
+  - {mark: Apple, classes: [9, 42], owner: Apple Inc., status: live}
+  - {mark: Google, classes: [9, 42], owner: Google LLC, status: live}
+  - {mark: Amazon, classes: [35, 42], owner: Amazon Technologies, status: live}
+  - {mark: Netflix, classes: [38, 41], owner: Netflix Inc., status: live}
+  - {mark: Notion, classes: [9, 42], owner: Notion Labs, status: live}
+  - {mark: Figma, classes: [9, 42], owner: Figma Inc., status: live}
+  - {mark: Slack, classes: [9, 42], owner: Salesforce Inc., status: live}
+  - {mark: Shopify, classes: [35, 42], owner: Shopify Inc., status: live}
+  - {mark: Stripe, classes: [36, 42], owner: Stripe Inc., status: live}
+  - {mark: PayPal, classes: [36], owner: PayPal Inc., status: live}
+  - {mark: Visa, classes: [36], owner: Visa Inc., status: live}
+  - {mark: Nike, classes: [25], owner: Nike Inc., status: live}
+  - {mark: Adidas, classes: [25], owner: adidas AG, status: live}
+  - {mark: IKEA, classes: [20, 35], owner: Inter IKEA Systems, status: live}
+  - {mark: Wayfair, classes: [35], owner: Wayfair LLC, status: live}
+  - {mark: Casper, classes: [20, 35], owner: Casper Sleep, status: live}
+  - {mark: Roomba, classes: [7, 9], owner: iRobot Corp., status: live}
+  - {mark: Zillow, classes: [36, 42], owner: Zillow Group, status: live}
+  - {mark: Uber, classes: [39, 42], owner: Uber Technologies, status: live}
+  - {mark: Airbnb, classes: [39, 42, 43], owner: Airbnb Inc., status: live}
+  - {mark: Starbucks, classes: [30, 43], owner: Starbucks Corp., status: live}
+  - {mark: Coca-Cola, classes: [32], owner: Coca-Cola Co., status: live}
+  - {mark: Disney, classes: [41], owner: Disney Enterprises, status: live}
+  - {mark: Lego, classes: [28], owner: Lego Juris, status: live}
+  - {mark: Peloton, classes: [28, 41], owner: Peloton Interactive, status: live}
+  - {mark: Tesla, classes: [12], owner: Tesla Inc., status: live}

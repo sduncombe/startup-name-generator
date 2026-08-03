@@ -17,7 +17,7 @@ from app.services.llm import LlmCredentials, LlmError, generate_names_from_brief
 from app.services.pronunciation import pronounce_guide
 from app.services.radio_test import radio_test
 from app.services.scorer import score_candidate
-from app.services.trademark_screen import screen_name
+from app.services.trademark_screen import dataset_info, screen_name
 
 logger = logging.getLogger(__name__)
 
@@ -349,7 +349,7 @@ async def check_trademarks_for_run(
         "ready",
         {"phase": "trademarks", "target": len(candidates), "done": done},
     )
-    return {"checked": done, **counts}
+    return {"checked": done, **counts, "dataset": dataset_info()}
 
 
 async def check_domains_for_run(

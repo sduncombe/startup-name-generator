@@ -111,9 +111,16 @@ def test_infer_classes_from_brief():
     assert 9 in classes and 42 in classes  # software
 
 
-def test_bundled_dataset_flags_famous_marks():
+def test_sample_dataset_is_small_and_clearly_flagged():
+    from app.services.trademark_screen import dataset_info
+
     marks = load_marks()
-    assert len(marks) > 100
+    # Deliberately tiny: demo data, not a trademark database
+    assert 10 <= len(marks) <= 60
+    info = dataset_info()
+    assert info["sample"] is True
+    assert "sample" in info["name"].lower()
+
     result = screen_name("Notion", category="software", keywords=["software"], marks=marks)
     assert result.risk == RISK_HIGH
     result = screen_name("Wayfair", category="furniture marketplace", keywords=["furniture"], marks=marks)

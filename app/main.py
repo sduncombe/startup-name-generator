@@ -74,6 +74,7 @@ app.include_router(runs_router)
 @app.get("/api/health")
 async def health() -> dict[str, object]:
     from app.services.llm import llm_status
+    from app.services.trademark_screen import dataset_info
 
     settings = get_settings()
     status = llm_status()
@@ -81,6 +82,7 @@ async def health() -> dict[str, object]:
         "status": "ok",
         "public_app_url": settings.public_app_url,
         "github_repo_url": settings.github_repo_url,
+        "trademark_dataset": dataset_info(),
         **status,
     }
 

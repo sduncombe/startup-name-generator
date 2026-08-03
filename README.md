@@ -36,7 +36,26 @@ Each name gets a risk indicator with a plain-language explanation:
 - **Medium**: a similar live trademark exists in the same industry
 - **High**: an exact live trademark exists; consider another name
 
-The bundled dataset (`config/trademarks.yaml`) covers well-known live US marks derived from public USPTO records. The USPTO’s Trademark Search system has no public REST API (and its keyed TSDR API only supports lookup by serial number), so real-time register queries aren’t possible without scraping, which this project avoids. For deeper coverage, set `TRADEMARK_DATA_PATH` to a larger file in the same YAML format built from the [official USPTO bulk data](https://data.uspto.gov/).
+### Data source: sample data by default, USPTO bulk data for production
+
+The engine is data-source agnostic. Out of the box it loads `config/trademarks.sample.yaml`, a tiny sample dataset (a few dozen famous marks) that exists only so contributors can clone the repository and immediately run the app. **It is not a trademark database** and the UI says so whenever the sample dataset is active.
+
+For production-quality screening, import the official USPTO bulk trademark data (the USPTO’s Trademark Search system has no public REST API, and its keyed TSDR API only supports lookup by serial number, so real-time register queries aren’t possible without scraping, which this project avoids):
+
+1. Download “Trademark applications” XML files (e.g. `apc*.zip`) from the [USPTO bulk data portal](https://data.uspto.gov/). No account needed.
+2. Convert them into the screening dataset format:
+
+```bash
+python tools/import_uspto.py apc*.zip -o data/uspto-trademarks.json
+```
+
+3. Point the app at the imported dataset:
+
+```bash
+TRADEMARK_DATA_PATH=data/uspto-trademarks.json uvicorn app.main:app
+```
+
+The importer is deterministic and offline: it streams the XML, keeps wordmarks with their status (Live / Pending / Dead, mapped from official USPTO status codes) and Nice classes, dedupes, and writes JSON or YAML. `--classes 9,42` restricts to specific Nice classes; `--include-dead` keeps dead marks. Any file in the same format works; the engine does not care where the data comes from.
 
 Trademark screening is provided as an informational tool only and is not legal advice. Always consult a qualified trademark attorney before adopting a brand.
 

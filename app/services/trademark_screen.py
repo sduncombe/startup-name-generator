@@ -5,14 +5,18 @@ Screens candidate names against a dataset of registered US wordmarks using
 exact, edit-distance (Levenshtein / Jaro-Winkler), and phonetic (Soundex /
 phonetic key) matching, weighted by Nice class relevance.
 
-No AI, no scraping. The bundled dataset (config/trademarks.yaml) is derived
-from public USPTO records; a larger file built from official USPTO bulk data
-can be supplied via TRADEMARK_DATA_PATH. This is an early-warning screen,
-not legal advice.
+No AI, no scraping. The engine is data-source agnostic: it consumes any
+YAML or JSON dataset with a `marks` list (and optional `meta`). Out of the
+box it loads a tiny SAMPLE dataset (config/trademarks.sample.yaml) meant
+only for development and demos. For production-quality screening, build a
+dataset from the official USPTO bulk data with tools/import_uspto.py and
+point TRADEMARK_DATA_PATH at it. This is an early-warning screen, not
+legal advice.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -81,12 +85,31 @@ class ScreenResult:
 def _dataset() -> dict[str, Any]:
     settings = get_settings()
     override = (getattr(settings, "trademark_data_path", "") or "").strip()
-    path = Path(override) if override else CONFIG_DIR / "trademarks.yaml"
+    path = Path(override) if override else CONFIG_DIR / "trademarks.sample.yaml"
     with path.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
+        if path.suffix.lower() == ".json":
+            data = json.load(f) or {}
+        else:
+            data = yaml.safe_load(f) or {}
     if not isinstance(data, dict):
         raise ValueError("Trademark dataset must be a mapping")
     return data
+
+
+def dataset_info() -> dict[str, Any]:
+    """Metadata about the active dataset, so the UI can flag sample data."""
+    meta = _dataset().get("meta") or {}
+    return {
+        "name": str(meta.get("name") or "Custom dataset"),
+        "sample": bool(meta.get("sample", False)),
+        "source": str(meta.get("source") or ""),
+        "marks": len(load_marks()),
+    }
+
+
+def clear_dataset_cache() -> None:
+    _dataset.cache_clear()
+    load_marks.cache_clear()
 
 
 @lru_cache
@@ -113,8 +136,10 @@ def load_marks() -> tuple[MarkRecord, ...]:
 
 @lru_cache
 def _class_hints() -> dict[str, tuple[int, ...]]:
+    with (CONFIG_DIR / "trademark_classes.yaml").open(encoding="utf-8") as f:
+        config = yaml.safe_load(f) or {}
     hints = {}
-    for word, classes in (_dataset().get("class_hints") or {}).items():
+    for word, classes in (config.get("class_hints") or {}).items():
         hints[str(word).lower()] = tuple(int(c) for c in classes)
     return hints
 

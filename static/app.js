@@ -469,7 +469,25 @@
     setIdleMessage("AI key cleared");
   });
 
+  async function showTrademarkDatasetNote() {
+    try {
+      const health = await api("/api/health");
+      const ds = health.trademark_dataset || {};
+      const note = $("tmDataNote");
+      if (ds.sample) {
+        note.textContent =
+          `Trademark screening currently uses a small built-in sample dataset (${ds.marks} well-known marks) for demonstration only. ` +
+          "It does not search the USPTO register. To screen against real USPTO data, import the official bulk dataset (see README).";
+        note.hidden = false;
+      } else if (ds.name) {
+        note.textContent = `Trademark screening dataset: ${ds.name} (${ds.marks} marks).`;
+        note.hidden = false;
+      }
+    } catch (_) { /* non-critical */ }
+  }
+
   refreshByokStatus();
   $("progress").hidden = true;
   refreshRuns().catch(() => {});
+  showTrademarkDatasetNote();
 })();
