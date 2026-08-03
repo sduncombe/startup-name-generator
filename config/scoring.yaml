@@ -1,24 +1,52 @@
 weights:
-  pronounceability: 25
-  spelling_clarity: 20
-  memorability: 15
-  length: 10
-  category_relevance: 10
+  pronounceability: 18
+  spelling_clarity: 14
+  memorability: 14
+  length: 8
+  category_relevance: 8
   brand_flexibility: 10
-  domain_availability: 10
+  domain_availability: 8
+  brand_credibility: 20
 
 # Per naming-style weight overrides (merged onto weights above).
-# Brandable rewards flexibility over keyword-in-name relevance.
+# Brandable rewards credibility / flexibility over keyword stuffing.
 style_weights:
-  brandable:
-    category_relevance: 4
-    brand_flexibility: 16
-    memorability: 18
-  balanced: {}
-  descriptive:
-    category_relevance: 18
-    brand_flexibility: 6
+  invented:
+    pronounceability: 16
+    spelling_clarity: 12
     memorability: 12
+    length: 8
+    category_relevance: 3
+    brand_flexibility: 10
+    domain_availability: 8
+    brand_credibility: 31
+  real_word:
+    pronounceability: 16
+    spelling_clarity: 14
+    memorability: 16
+    length: 8
+    category_relevance: 4
+    brand_flexibility: 10
+    domain_availability: 8
+    brand_credibility: 24
+  compound:
+    pronounceability: 14
+    spelling_clarity: 14
+    memorability: 18
+    length: 6
+    category_relevance: 8
+    brand_flexibility: 10
+    domain_availability: 8
+    brand_credibility: 22
+  descriptive:
+    pronounceability: 16
+    spelling_clarity: 12
+    memorability: 12
+    length: 8
+    category_relevance: 20
+    brand_flexibility: 6
+    domain_availability: 8
+    brand_credibility: 18
 
 penalties:
   existing_company_match: 40
@@ -29,13 +57,14 @@ penalties:
   long_name: 10
   unavailable_all_domains: 15
   blocklist_hit: 45
+  low_credibility: 22
 
 length:
   ideal_min: 5
-  ideal_max: 10
+  ideal_max: 8
   hard_max: 12
 
 syllables:
-  ideal_min: 2
-  ideal_max: 3
+  ideal_min: 1
+  ideal_max: 2
   hard_max: 3

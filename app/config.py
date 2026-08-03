@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     xai_base_url: str = "https://api.x.ai/v1"
-    llm_name_count: int = 48
-    radio_test_top: int = 80
+    llm_name_count: int = 20
+    radio_test_top: int = 24
 
     @property
     def db_path(self) -> Path:

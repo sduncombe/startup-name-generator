@@ -5,6 +5,8 @@ from typing import Any, Literal
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.services.brief import infer_brief
+from app.services.naming_entity import normalize_naming_entity
+from app.services.naming_style import normalize_naming_style
 from app.services.preferences import normalize_language
 
 
@@ -19,6 +21,12 @@ class RunCreate(BaseModel):
         default="",
         max_length=2000,
         validation_alias=AliasChoices("problem", "building"),
+    )
+    # Required: what kind of brand / thing is being named.
+    naming_entity: str = Field(
+        default="",
+        max_length=64,
+        validation_alias=AliasChoices("naming_entity", "naming", "what_naming"),
     )
     audience: str = Field(default="", max_length=1000)
     liked_brands: str = Field(default="", max_length=500)
@@ -36,8 +44,10 @@ class RunCreate(BaseModel):
         validation_alias=AliasChoices("primary_language_other", "primary_market_other"),
     )
 
-    # Naming philosophy: brandable (default) favors invented/abstract names
-    naming_style: Literal["brandable", "balanced", "descriptive"] = "brandable"
+    # Naming philosophies (distinct strategies):
+    # invented | real_word | compound | descriptive
+    # Legacy brandable/balanced are accepted and normalized to invented.
+    naming_style: str = "invented"
 
     # Optional / advanced (inferred when omitted)
     category: str = Field(default="", max_length=200)
@@ -47,7 +57,7 @@ class RunCreate(BaseModel):
 
     max_length: int = Field(default=12, ge=4, le=20)
     extensions: list[str] = Field(default_factory=lambda: [".com", ".app", ".co"])
-    generate_count: int = Field(default=400, ge=50, le=10000)
+    generate_count: int = Field(default=24, ge=12, le=2000)
     domain_check_top: int = Field(default=40, ge=0, le=2000)
     conflict_check_top: int = Field(default=40, ge=0, le=500)
     trademark_check_top: int = Field(default=40, ge=0, le=500)
@@ -99,10 +109,22 @@ class RunCreate(BaseModel):
         code, _ = normalize_language(raw)
         return code
 
+    @field_validator("naming_entity", mode="before")
+    @classmethod
+    def normalize_entity(cls, value: Any) -> str:
+        return normalize_naming_entity(str(value or ""))
+
+    @field_validator("naming_style", mode="before")
+    @classmethod
+    def normalize_style(cls, value: Any) -> str:
+        return normalize_naming_style(str(value or "invented"))
+
     @model_validator(mode="after")
     def infer_missing_fields(self) -> RunCreate:
         if not self.problem.strip() and not self.category.strip() and not self.brand_brief.strip():
             raise ValueError("Tell us what problem you are solving")
+        if not self.naming_entity:
+            raise ValueError("Tell us what you are naming (software company, podcast, local business, …)")
 
         problem = self.problem.strip()
         if not problem and self.brand_brief.strip():
@@ -117,6 +139,7 @@ class RunCreate(BaseModel):
             audience=self.audience,
             liked_brands=self.liked_brands,
             avoid=self.avoid,
+            naming_entity=self.naming_entity,
             primary_language=lang,
             primary_language_other=lang_other,
             category=self.category or None,
@@ -126,6 +149,7 @@ class RunCreate(BaseModel):
         self.category = inferred.category
         self.keywords = inferred.keywords
         self.tone = inferred.tone
+        self.naming_entity = inferred.naming_entity or self.naming_entity
         if not self.brand_brief.strip():
             self.brand_brief = inferred.brand_brief
         if not self.problem.strip():

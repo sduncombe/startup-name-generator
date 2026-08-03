@@ -207,6 +207,9 @@ AVOID_TRAIT_MAP: dict[str, set[str]] = {
     "artificial": {"tech_ai"},
     "gpt": {"tech_ai"},
     "llm": {"tech_ai"},
+    "vr": {"tech_ai"},
+    "xr": {"tech_ai"},
+    "vision": {"tech_ai"},
     "enterprise": {"enterprise", "sophisticated"},
     "corporate": {"enterprise", "sophisticated"},
     "b2b": {"enterprise"},
@@ -218,12 +221,24 @@ AVOID_TRAIT_MAP: dict[str, set[str]] = {
     "childish": {"playful", "youthful"},
     "hard to pronounce": {"hard_pronounce"},
     "hard-to-pronounce": {"hard_pronounce"},
+    "difficult to pronounce": {"hard_pronounce"},
     "unpronounceable": {"hard_pronounce"},
     "long": {"long"},
     "complicated": {"hard_pronounce", "long"},
     "jargon": {"enterprise", "tech"},
     "techy": {"tech"},
     "geeky": {"tech"},
+    "invented": {"invented_words"},
+    "invented words": {"invented_words"},
+    "syllable": {"invented_words"},
+    "ai-sounding": {"invented_words", "tech_ai"},
+    "ai sounding": {"invented_words", "tech_ai"},
+    "-ly": {"startup_suffix"},
+    "ly": {"startup_suffix"},
+    "-ify": {"startup_suffix"},
+    "ify": {"startup_suffix"},
+    "-io": {"startup_suffix"},
+    "io": {"startup_suffix"},
 }
 
 
@@ -315,11 +330,38 @@ def _infer_avoid(avoid: str) -> tuple[set[str], list[str]]:
     for needle, vals in AVOID_TRAIT_MAP.items():
         if needle in text:
             traits |= vals
-    # Free-form tokens to ban as substrings (skip ultra-short noise)
-    for tok in re.findall(r"[a-z][a-z0-9-]{2,}", text):
-        if tok in {"and", "the", "for", "with", "names", "name", "sounding", "sound"}:
+    # Free-form tokens to ban as substrings (skip ultra-short noise / meta words)
+    skip = {
+        "and",
+        "the",
+        "for",
+        "with",
+        "names",
+        "name",
+        "sounding",
+        "sound",
+        "words",
+        "word",
+        "random",
+        "combinations",
+        "combination",
+        "generic",
+        "startup",
+        "suffixes",
+        "suffix",
+        "like",
+        "difficult",
+        "pronounce",
+        "invented",
+    }
+    for tok in re.findall(r"[a-z][a-z0-9-]{1,}", text):
+        if tok in skip or len(tok) < 2:
             continue
-        tokens.append(tok)
+        # Keep short banned roots (ai, vr, xr, ly, io) and longer words.
+        if len(tok) <= 2 and tok not in {"ai", "vr", "xr", "ly", "io"}:
+            continue
+        if tok not in tokens:
+            tokens.append(tok)
         if tok in AVOID_TRAIT_MAP:
             traits |= AVOID_TRAIT_MAP[tok]
     return traits, tokens
@@ -333,6 +375,7 @@ def style_bias_from_traits(traits: set[str]) -> dict[str, float]:
         "compound": 1.0,
         "suggestive": 1.0,
         "descriptive": 1.0,
+        "real_word": 1.0,
     }
     if "abstract" in traits or "minimal" in traits:
         bias["invented"] += 0.35
@@ -390,15 +433,29 @@ def preference_penalty(name: str, profile: PreferenceProfile) -> tuple[float, li
     notes: list[str] = []
 
     for tok in profile.avoid_tokens:
-        if len(tok) >= 3 and tok in key:
-            penalty += 18
+        # Exact short bans (ai/vr/xr/ly/io) or substring for longer tokens.
+        if len(tok) <= 2:
+            if key == tok or key.endswith(tok) or key.startswith(tok):
+                penalty += 28
+                notes.append(f"contains avoided '{tok}'")
+        elif tok in key:
+            penalty += 22
             notes.append(f"contains avoided '{tok}'")
 
     # Trait-based heuristics on the name itself
     if "tech_ai" in profile.avoid_traits:
-        if any(s in key for s in ("ai", "gpt", "neural", "bot", "llm", "intel")):
-            penalty += 22
+        if any(s in key for s in ("ai", "gpt", "neural", "bot", "llm", "intel", "vision", "vr", "xr")):
+            penalty += 28
             notes.append("AI-coded")
+    if "startup_suffix" in profile.avoid_traits:
+        if key.endswith(("ly", "ify", "io")) and len(key) >= 5:
+            penalty += 30
+            notes.append("startup suffix")
+    if "invented_words" in profile.avoid_traits:
+        # Soft inventeds / syllable soup — scoring layer; generator also gates these.
+        if key.endswith(("ora", "ura", "iva", "ova", "ly", "ify")) and len(key) >= 6:
+            penalty += 26
+            notes.append("invented / AI-sounding")
     if "enterprise" in profile.avoid_traits:
         if any(s in key for s in ("corp", "sys", "soft", "data", "logic", "stack", "cloud")):
             penalty += 14

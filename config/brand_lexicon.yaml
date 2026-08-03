@@ -1,0 +1,391 @@
+# Curated lexicon for brandable names.
+# Prefer real linguistic roots and patterns from successful brands
+# (Stripe, Figma, Notion, Canva, Sonos, Linear, Vercel, Slack, Ramp,
+#  Brex, Monzo, Airtable, Arc, …) over random syllable soup.
+
+# One-syllable punchy stems — short, ownable, company-like.
+# One-syllable punchy stems — short, ownable, company-like.
+# Inspired by Stripe/Slack/Ramp/Brex/Arc — not those names themselves.
+short_punchy:
+  - bolt
+  - brisk
+  - clew
+  - crest
+  - drift
+  - flint
+  - forge
+  - gleam
+  - grit
+  - hatch
+  - helm
+  - hinge
+  - hush
+  - kiln
+  - knot
+  - latch
+  - loft
+  - loom
+  - luxe
+  - marsh
+  - mesh
+  - north
+  - pact
+  - peak
+  - plume
+  - pulse
+  - quay
+  - quilt
+  - ridge
+  - rift
+  - rune
+  - sable
+  - sift
+  - slash
+  - sleek
+  - spark
+  - stack
+  - stride
+  - surge
+  - tint
+  - vault
+  - vex
+  - volt
+  - warp
+  - wick
+  - zest
+  - flit
+  - glen
+  - jolt
+  - wisp
+
+# Soft two-syllable shapes with Figma / Notion / Canva energy.
+# ONLY real English / classical words — never soft inventeds (velora, norva, …).
+soft_brandables:
+  - aura
+  - calyx
+  - echo
+  - fable
+  - figment
+  - halo
+  - iris
+  - ivory
+  - kith
+  - lumen
+  - lumina
+  - lyra
+  - mira
+  - nectar
+  - nimbus
+  - nora
+  - nova
+  - opal
+  - orion
+  - prism
+  - raven
+  - ripple
+  - rivet
+  - riven
+  - solace
+  - terra
+  - tessa
+  - umbra
+  - vale
+  - vera
+  - vertex
+  - zenith
+
+# Latin / Greek roots (use with brand suffixes).
+classical_roots:
+  - aether
+  - alma
+  - alto
+  - aqua
+  - arbor
+  - aster
+  - atlas
+  - aura
+  - axis
+  - cento
+  - clara
+  - clavis
+  - corona
+  - cura
+  - dens
+  - forma
+  - fortuna
+  - lumen
+  - luna
+  - magna
+  - manus
+  - merit
+  - nova
+  - orbis
+  - pactum
+  - pax
+  - porta
+  - prima
+  - radius
+  - radix
+  - sens
+  - sol
+  - soma
+  - spect
+  - terra
+  - vertex
+  - veritas
+  - via
+  - vigor
+  - vita
+  - vivo
+  - vox
+  # Greek-leaning
+  - agora
+  - cosmos
+  - genesis
+  - helix
+  - kairos
+  - logos
+  - morph
+  - nexus
+  - phos
+  - psyche
+  - sophia
+  - techne
+  - thesis
+
+# Nature
+nature_roots:
+  - alder
+  - amber
+  - cedar
+  - cinder
+  - clover
+  - coral
+  - dune
+  - ember
+  - fern
+  - frost
+  - grove
+  - harbor
+  - haze
+  - meadow
+  - moss
+  - pebble
+  - pine
+  - river
+  - silt
+  - tide
+  - willow
+
+# Science / tech
+science_roots:
+  - axiom
+  - carbon
+  - cipher
+  - delta
+  - flux
+  - ion
+  - lattice
+  - lepton
+  - neutron
+  - orbit
+  - photon
+  - plasma
+  - quark
+  - radar
+  - signal
+  - vector
+  - wavelet
+
+# Architecture / built world
+architecture_roots:
+  - atrium
+  - beam
+  - buttress
+  - canopy
+  - colonnade
+  - keystone
+  - lintel
+  - pillar
+  - plaza
+  - span
+  - spire
+  - truss
+
+# Geography
+geography_roots:
+  - alpine
+  - arctic
+  - bay
+  - cape
+  - delta
+  - fjord
+  - isle
+  - meridian
+  - mesa
+  - sierra
+  - summit
+
+# Astronomy
+astronomy_roots:
+  - aurora
+  - comet
+  - luna
+  - nebula
+  - nova
+  - orbit
+  - orion
+  - pulsar
+  - quasar
+  - solar
+  - stellar
+  - zenith
+
+# Mythology (light touch — avoid overused Zeus/Apollo clones)
+mythology_roots:
+  - atlas
+  - echo
+  - iris
+  - lyra
+  - muse
+  - nymph
+  - orion
+  - phoenix
+  - titan
+  - vesta
+
+# Brand-like suffixes seen in real companies (Vercel, Figma, Notion-ish endings).
+# Keep short. No product words (home, nest, room, proof…).
+brand_suffixes:
+  - a
+  - o
+  - y
+  - ly
+  - el
+  - en
+  - on
+  - an
+  - ar
+  - er
+  - or
+  - us
+  - um
+  - ix
+  - is
+  - ia
+  - io
+  - yo
+  - ra
+  - ro
+  - no
+  - so
+  - to
+  - ko
+  - zo
+  - va
+  - ba
+  - ma
+  - na
+  - ta
+  - cel
+  - bel
+  - del
+  - nel
+  - rel
+  - vel
+  - lin
+  - rin
+  - tin
+  - bit
+  - lit
+  - kit
+  - hub
+  - lab
+  - base
+  - form
+  - line
+  - path
+  - rise
+  - way
+
+# Soft endings only for invented / evocative glue.
+soft_endings:
+  - a
+  - o
+  - y
+  - ly
+  - el
+  - en
+  - on
+  - ar
+  - or
+  - us
+  - ix
+  - ia
+  - io
+  - ra
+  - va
+  - ma
+  - na
+  - cel
+  - lin
+
+# Preferred onsets for intentional coinages (real brand phonemes).
+brand_onsets:
+  - b
+  - br
+  - c
+  - cl
+  - d
+  - f
+  - fl
+  - g
+  - h
+  - k
+  - kn
+  - l
+  - m
+  - n
+  - p
+  - pl
+  - pr
+  - r
+  - s
+  - sl
+  - st
+  - str
+  - t
+  - tr
+  - v
+  - w
+  - z
+
+# Single-letter nuclei only — multi-letter nuclei create Booflar-class junk.
+brand_nuclei:
+  - a
+  - e
+  - i
+  - o
+  - u
+
+brand_codas:
+  - ""
+  - n
+  - m
+  - l
+  - r
+  - s
+  - t
+  - k
+  - x
+  - p
+
+# Shapes inspired by Stripe/Figma/Notion/Slack/Ramp/Monzo/Vercel.
+# CV = open, CVC = closed punchy, CVCV = soft two-syllable.
+brand_patterns:
+  - CVC
+  - CVCV
+  - CVCV
+  - CVCVC
+  - CCVC
+  - CCVCV

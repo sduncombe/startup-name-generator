@@ -63,6 +63,20 @@ CREATE TABLE IF NOT EXISTS domain_cache (
     checked_at TEXT NOT NULL,
     raw_json TEXT NOT NULL DEFAULT '{}'
 );
+
+CREATE TABLE IF NOT EXISTS favorite_signals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL,
+    name_key TEXT NOT NULL,
+    length INTEGER NOT NULL,
+    shape TEXT NOT NULL,
+    method TEXT NOT NULL DEFAULT '',
+    naming_style TEXT NOT NULL DEFAULT '',
+    ends_vowel INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE INDEX IF NOT EXISTS idx_favorite_signals_active ON favorite_signals(active, created_at DESC);
 """
 
 MIGRATIONS = [
@@ -76,6 +90,22 @@ MIGRATIONS = [
     ("trademark_summary", "ALTER TABLE candidates ADD COLUMN trademark_summary TEXT NOT NULL DEFAULT ''"),
     ("trademark_reason", "ALTER TABLE candidates ADD COLUMN trademark_reason TEXT NOT NULL DEFAULT ''"),
     ("trademark_matches", "ALTER TABLE candidates ADD COLUMN trademark_matches TEXT NOT NULL DEFAULT '[]'"),
+    (
+        "favorite_signals",
+        """
+        CREATE TABLE IF NOT EXISTS favorite_signals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            name_key TEXT NOT NULL,
+            length INTEGER NOT NULL,
+            shape TEXT NOT NULL,
+            method TEXT NOT NULL DEFAULT '',
+            naming_style TEXT NOT NULL DEFAULT '',
+            ends_vowel INTEGER NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 1
+        )
+        """,
+    ),
 ]
 
 
@@ -317,6 +347,97 @@ async def set_favorite(
     )
     await db.commit()
     return cur.rowcount > 0
+
+
+async def record_favorite_signal(
+    db: aiosqlite.Connection,
+    *,
+    name_key: str,
+    length: int,
+    shape: str,
+    method: str = "",
+    naming_style: str = "",
+    ends_vowel: bool = False,
+    active: bool = True,
+) -> None:
+    """Upsert a learning signal when a user stars/unstars a name."""
+    await db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS favorite_signals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            name_key TEXT NOT NULL,
+            length INTEGER NOT NULL,
+            shape TEXT NOT NULL,
+            method TEXT NOT NULL DEFAULT '',
+            naming_style TEXT NOT NULL DEFAULT '',
+            ends_vowel INTEGER NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 1
+        )
+        """
+    )
+    now = datetime.now(timezone.utc).isoformat()
+    if active:
+        await db.execute(
+            """
+            INSERT INTO favorite_signals
+            (created_at, name_key, length, shape, method, naming_style, ends_vowel, active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+            """,
+            (now, name_key, length, shape, method, naming_style, 1 if ends_vowel else 0),
+        )
+    else:
+        await db.execute(
+            "UPDATE favorite_signals SET active = 0 WHERE name_key = ? AND active = 1",
+            (name_key,),
+        )
+    await db.commit()
+
+
+async def list_favorite_signals(
+    db: aiosqlite.Connection,
+    *,
+    limit: int = 200,
+) -> list[dict[str, Any]]:
+    await db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS favorite_signals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            name_key TEXT NOT NULL,
+            length INTEGER NOT NULL,
+            shape TEXT NOT NULL,
+            method TEXT NOT NULL DEFAULT '',
+            naming_style TEXT NOT NULL DEFAULT '',
+            ends_vowel INTEGER NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 1
+        )
+        """
+    )
+    cur = await db.execute(
+        """
+        SELECT name_key, length, shape, method, naming_style, ends_vowel
+        FROM favorite_signals
+        WHERE active = 1
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    )
+    rows = await cur.fetchall()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        out.append(
+            {
+                "key": r[0],
+                "length": int(r[1] or 0),
+                "shape": r[2] or "invented",
+                "method": r[3] or "",
+                "naming_style": r[4] or "",
+                "ends_vowel": bool(r[5]),
+            }
+        )
+    return out
 
 
 async def update_candidate_domains(

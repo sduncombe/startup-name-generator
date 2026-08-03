@@ -57,6 +57,7 @@
     if (key === "trademark_risk" || key === "risk") return riskRank(c);
     if (key === "radio_result") return String(c.radio_result || "");
     if (key === "favorite") return c.favorite ? 1 : 0;
+    if (key === "source") return String(c.source || c.generation_source || "local");
     if (key === "com") return domainStatus(c, ".com");
     return 0;
   }
@@ -197,6 +198,7 @@
         (c) => `<tr>
         <td class="fav ${c.favorite ? "on" : ""}" data-name="${escapeAttr(c.name)}">${c.favorite ? "★" : "☆"}</td>
         <td class="name-cell"><strong>${escapeHtml(c.name)}</strong><div class="pron">${escapeHtml(c.pronunciation || "")}</div></td>
+        <td>${sourceBadge(c)}</td>
         <td>${Number(c.total_score || 0).toFixed(1)}</td>
         <td><div class="domain-stack">${bestDomainSummary(c)}</div></td>
         <td class="tm-cell" title="${escapeAttr(c.trademark_reason || "")}">${escapeHtml(trademarkLabel(c))}</td>
@@ -210,46 +212,96 @@
   }
 
   const BYOK = {
+    enabled: "sng_llm_enabled",
     provider: "sng_llm_provider",
     key: "sng_llm_key",
     model: "sng_llm_model",
   };
 
   function readByok() {
+    const storedKey = sessionStorage.getItem(BYOK.key) || "";
+    const fieldKey = $("llmKey").value.trim();
     return {
+      enabled: $("aiEnabled").checked,
       provider: sessionStorage.getItem(BYOK.provider) || $("llmProvider").value || "anthropic",
-      key: sessionStorage.getItem(BYOK.key) || "",
-      model: sessionStorage.getItem(BYOK.model) || "",
+      key: fieldKey || storedKey,
+      model: $("llmModel").value.trim() || sessionStorage.getItem(BYOK.model) || "",
     };
   }
 
   function persistByokFromFields() {
+    const enabled = $("aiEnabled").checked;
     const provider = $("llmProvider").value;
     const key = $("llmKey").value.trim();
     const model = $("llmModel").value.trim();
+    sessionStorage.setItem(BYOK.enabled, enabled ? "true" : "false");
     sessionStorage.setItem(BYOK.provider, provider);
     if (key) sessionStorage.setItem(BYOK.key, key);
+    else sessionStorage.removeItem(BYOK.key);
     if (model) sessionStorage.setItem(BYOK.model, model);
     else sessionStorage.removeItem(BYOK.model);
     refreshByokStatus();
   }
 
   function refreshByokStatus() {
-    const { provider, key, model } = readByok();
+    const { enabled, provider, key, model } = readByok();
     $("llmProvider").value = provider;
-    if (!$("llmKey").value) $("llmModel").value = model;
-    $("byokStatus").textContent = key ? `Key set · ${provider}` : "No key";
+    if (!$("llmModel").value) $("llmModel").value = model;
+    $("aiFields").classList.toggle("disabled", !enabled);
+    $("byokStatus").className = `ai-status ${enabled ? (key ? "enabled" : "missing") : ""}`;
+    $("byokStatus").textContent = enabled
+      ? (key ? `Enabled · ${provider}` : "Enabled · key required")
+      : "Disabled · local only";
+
+    // Always-visible indicator so AI state is clear with Advanced closed.
+    const indicator = $("aiIndicator");
+    indicator.classList.toggle("on", enabled && Boolean(key));
+    indicator.classList.toggle("warn", enabled && !key);
+    indicator.textContent = enabled
+      ? (key ? `AI on · ${provider}` : "AI on · key required")
+      : "AI off";
   }
 
   function llmHeaders() {
-    const { provider, key, model } = readByok();
-    const headers = {};
-    if (key) {
+    const { enabled, provider, key, model } = readByok();
+    const headers = { "X-LLM-Enabled": enabled ? "true" : "false" };
+    if (enabled && key) {
       headers["X-LLM-Provider"] = provider;
       headers["X-LLM-API-Key"] = key;
       if (model) headers["X-LLM-Model"] = model;
     }
     return headers;
+  }
+
+  function sourceBadge(c) {
+    const source = c.source || c.generation_source || (c.method === "llm" ? "ai" : "local");
+    const label = source === "ai" ? "AI" : "Local";
+    const detail = source === "ai"
+      ? [c.ai_provider, c.ai_model].filter(Boolean).join(" · ")
+      : "";
+    return `<span class="source-badge source-${source}" title="${escapeAttr(detail)}">${label}</span>`;
+  }
+
+  function renderAiRunSummary(run) {
+    const box = $("aiRunSummary");
+    const ai = (run && run.llm) || {};
+    const status = ai.status || (ai.enabled ? "pending" : "disabled");
+    if (status === "disabled" && !ai.requested) {
+      box.hidden = false;
+      box.className = "ai-run-summary disabled";
+      box.innerHTML = "<strong>Local generation only</strong><span>AI was disabled for this run.</span>";
+      return;
+    }
+    const provider = ai.provider || "Unknown provider";
+    const model = ai.model || "Default model";
+    const accepted = Number(ai.accepted_count || ai.count || 0);
+    const returned = Number(ai.returned_count || 0);
+    const failed = status === "failed";
+    box.hidden = false;
+    box.className = `ai-run-summary ${failed ? "failed" : status === "succeeded" ? "succeeded" : ""}`;
+    box.innerHTML = failed
+      ? `<strong>AI request failed</strong><span>${escapeHtml(provider)} · ${escapeHtml(model)}</span><p>${escapeHtml(ai.error || "Unknown provider error")}</p>`
+      : `<strong>AI-generated names only</strong><span>${escapeHtml(provider)} · ${escapeHtml(model)} · ${accepted} names${returned && returned !== accepted ? ` (${returned} returned)` : ""}</span>`;
   }
 
   async function api(path, options = {}) {
@@ -283,6 +335,7 @@
     exportBtn.href = `/api/runs/${run.id}/export.csv`;
     exportBtn.hidden = false;
     showResults();
+    renderAiRunSummary(run);
     renderDirections(run, state.candidates);
     renderTable();
   }
@@ -312,17 +365,37 @@
 
   async function generate() {
     persistByokFromFields();
+    const byok = readByok();
+    if (byok.enabled && !byok.key) {
+      $("advanced").open = true;
+      setIdleMessage("AI is enabled, but an API key is required.");
+      $("llmKey").focus();
+      return;
+    }
+    if (byok.enabled && !byok.provider) {
+      setIdleMessage("Select an AI provider before generating.");
+      $("llmProvider").focus();
+      return;
+    }
     const fd = new FormData($("runForm"));
     const domainTop = 40;
     const conflictTop = 40;
     const trademarkTop = 40;
+    const namingEntity = String(fd.get("naming_entity") || "").trim();
+    if (!namingEntity) {
+      $("entityTrigger").focus();
+      openEntityMenu();
+      setIdleMessage("Choose what you are naming first.");
+      return;
+    }
     const payload = {
       problem: String(fd.get("problem") || ""),
+      naming_entity: namingEntity,
       audience: String(fd.get("audience") || ""),
       liked_brands: String(fd.get("liked_brands") || ""),
       avoid: String(fd.get("avoid") || ""),
       primary_language: String(fd.get("primary_language") || "en-global"),
-      naming_style: String(fd.get("naming_style") || "brandable"),
+      naming_style: String(fd.get("naming_style") || "invented"),
       max_length: Number(fd.get("max_length")),
       generate_count: Number(fd.get("generate_count")),
       extensions: String(fd.get("extensions") || "")
@@ -335,6 +408,7 @@
       run_pipeline: false,
     };
 
+    let runId = null;
     try {
       $("btnCreate").disabled = true;
       setBusy(true, "Generating names…");
@@ -343,9 +417,14 @@
         method: "POST",
         body: JSON.stringify(payload),
       });
-      const runId = created.run.id;
+      runId = created.run.id;
 
-      setBusy(true, "Scoring and radio-testing…");
+      setBusy(
+        true,
+        byok.enabled
+          ? `Generating with ${byok.provider} (AI only)…`
+          : "Generating locally…",
+      );
       const gen = await api(`/api/runs/${runId}/generate`, {
         method: "POST",
         body: "{}",
@@ -376,12 +455,21 @@
       await refreshRuns();
 
       const r = gen.result || {};
-      const bits = [`${state.candidates.length} names`];
-      if (r.llm) bits.push(`${r.llm} from AI`);
-      setIdleMessage(bits.join(" · "));
+      const ai = (data.run && data.run.llm) || {};
+      if (ai.status === "succeeded") {
+        setIdleMessage(`${state.candidates.length} AI names · ${ai.provider || byok.provider}`);
+      } else {
+        setIdleMessage(`${state.candidates.length} local names`);
+      }
       $("problem").blur();
     } catch (err) {
       setIdleMessage(`Something went wrong: ${err.message}`);
+      if (runId) {
+        try {
+          const failed = await api(`/api/runs/${runId}`);
+          setActiveRun(failed.run, failed.candidates || []);
+        } catch (_) { /* preserve the original provider error */ }
+      }
     } finally {
       $("btnCreate").disabled = false;
     }
@@ -396,7 +484,13 @@
   document.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      if (!$("btnCreate").disabled && $("problem").value.trim()) generate();
+      if (
+        !$("btnCreate").disabled &&
+        $("problem").value.trim() &&
+        $("namingEntity").value
+      ) {
+        generate();
+      }
     }
   });
 
@@ -453,18 +547,23 @@
   });
 
   // Key autosaves on change/blur; no separate Save control
-  ["llmKey", "llmProvider", "llmModel"].forEach((id) => {
+  ["aiEnabled", "llmKey", "llmProvider", "llmModel"].forEach((id) => {
     $(id).addEventListener("change", persistByokFromFields);
     $(id).addEventListener("blur", persistByokFromFields);
   });
   $("llmKey").addEventListener("input", () => {
-    if ($("llmKey").value.trim().length > 8) persistByokFromFields();
+    if ($("llmKey").value.trim().length > 8) {
+      $("aiEnabled").checked = true;
+      persistByokFromFields();
+    }
   });
 
   $("btnClearKey").addEventListener("click", () => {
     sessionStorage.removeItem(BYOK.provider);
     sessionStorage.removeItem(BYOK.key);
     sessionStorage.removeItem(BYOK.model);
+    sessionStorage.setItem(BYOK.enabled, "false");
+    $("aiEnabled").checked = false;
     $("llmKey").value = "";
     $("llmModel").value = "";
     refreshByokStatus();
@@ -522,6 +621,7 @@
   }
 
   function openLanguageMenu() {
+    closeEntityMenu();
     const picker = $("languagePicker");
     picker.classList.add("open");
     $("languageTrigger").setAttribute("aria-expanded", "true");
@@ -530,6 +630,48 @@
 
   paintLangIcons();
   setLanguageValue("en-global", "English (Global)", "globe-alt");
+
+  function setEntityValue(value, label) {
+    $("namingEntity").value = value || "";
+    const text = $("entityTriggerLabel");
+    if (value) {
+      text.textContent = label;
+      text.classList.remove("is-placeholder");
+    } else {
+      text.textContent = "Select one…";
+      text.classList.add("is-placeholder");
+    }
+    $("entityMenu").querySelectorAll('[role="option"]').forEach((opt) => {
+      opt.setAttribute("aria-selected", opt.dataset.value === value ? "true" : "false");
+    });
+  }
+
+  function closeEntityMenu() {
+    const picker = $("entityPicker");
+    picker.classList.remove("open");
+    $("entityTrigger").setAttribute("aria-expanded", "false");
+    $("entityMenu").hidden = true;
+  }
+
+  function openEntityMenu() {
+    closeLanguageMenu();
+    const picker = $("entityPicker");
+    picker.classList.add("open");
+    $("entityTrigger").setAttribute("aria-expanded", "true");
+    $("entityMenu").hidden = false;
+  }
+
+  $("entityTrigger").addEventListener("click", () => {
+    if ($("entityMenu").hidden) openEntityMenu();
+    else closeEntityMenu();
+  });
+
+  $("entityMenu").addEventListener("click", (e) => {
+    const opt = e.target.closest('[role="option"]');
+    if (!opt) return;
+    setEntityValue(opt.dataset.value, opt.dataset.label);
+    closeEntityMenu();
+  });
 
   $("languageTrigger").addEventListener("click", () => {
     if ($("languageMenu").hidden) openLanguageMenu();
@@ -545,16 +687,52 @@
 
   document.addEventListener("click", (e) => {
     if (!$("languagePicker").contains(e.target)) closeLanguageMenu();
+    if (!$("entityPicker").contains(e.target)) closeEntityMenu();
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !$("languageMenu").hidden) {
+    if (e.key !== "Escape") return;
+    if (!$("languageMenu").hidden) {
       closeLanguageMenu();
       $("languageTrigger").focus();
+    }
+    if (!$("entityMenu").hidden) {
+      closeEntityMenu();
+      $("entityTrigger").focus();
     }
   });
 
 
+  const NAMING_STYLE_HINTS = {
+    invented:
+      "Purpose-built brands that still feel natural — like Figma, Canva, or Houzz.",
+    real_word:
+      "Existing words used as brands — like Stripe, Cursor, Ramp, Atlas, or Beacon.",
+    compound:
+      "Two familiar concepts joined into one memorable brand — like Basecamp, Mailchimp, or GitHub.",
+    descriptive:
+      "Names that immediately communicate what the company or product does — like SurveyMonkey or PayPal.",
+  };
+
+  function refreshNamingStyleHint() {
+    const checked = document.querySelector('input[name="naming_style"]:checked');
+    const style = checked ? checked.value : "invented";
+    const hint = $("namingStyleHint");
+    if (hint) hint.textContent = NAMING_STYLE_HINTS[style] || NAMING_STYLE_HINTS.invented;
+  }
+
+  document.querySelectorAll('input[name="naming_style"]').forEach((el) => {
+    el.addEventListener("change", refreshNamingStyleHint);
+  });
+  refreshNamingStyleHint();
+
+  $("llmKey").value = sessionStorage.getItem(BYOK.key) || "";
+  $("llmModel").value = sessionStorage.getItem(BYOK.model) || "";
+  // Key present ⇒ AI on. Local is only for runs with AI explicitly off / no key.
+  const storedEnabled = sessionStorage.getItem(BYOK.enabled);
+  $("aiEnabled").checked =
+    storedEnabled === "true" ||
+    (storedEnabled !== "false" && Boolean(sessionStorage.getItem(BYOK.key)));
   refreshByokStatus();
   $("progress").hidden = true;
   refreshRuns().catch(() => {});

@@ -1,5 +1,6 @@
-# Abstract roots for brandable / evocative naming. Prefer these when the
-# naming style is Brandable; they deliberately avoid product vocabulary.
+# Abstract / brandable vocabulary. Product pools below are for suggestive
+# and descriptive styles only — brandable generation prefers brand_lexicon.yaml.
+
 abstract_roots:
   - nova
   - lumen
@@ -19,7 +20,6 @@ abstract_roots:
   - meridian
   - atlas
   - orion
-  - vexel
   - kith
   - rune
   - canopy
@@ -51,9 +51,7 @@ abstract_roots:
   - glow
   - haze
   - iris
-  - jot
   - knot
-  - lumen
   - meadow
   - nectar
   - orbit
@@ -63,9 +61,35 @@ abstract_roots:
   - spark
   - tint
   - vault
-  - whisper
-  - yarn
   - zest
+  - nexus
+  - helix
+  - vector
+  - axiom
+  - corona
+  - vertex
+  - vigor
+  - soma
+  - agora
+  - kairos
+  - aurora
+  - spire
+  - atrium
+  - sierra
+  - summit
+  - cedar
+  - fern
+  - plume
+  - stride
+  - surge
+  - clew
+  - helm
+  - hinge
+  - mesh
+  - pact
+  - peak
+  - rift
+  - volt
 
 evocative_left:
   - bright
@@ -88,6 +112,10 @@ evocative_left:
   - warm
   - wild
   - bold
+  - north
+  - prime
+  - clear
+  - rapid
 
 evocative_right:
   - bloom
@@ -104,12 +132,11 @@ evocative_right:
   - stone
   - way
   - work
-  - yard
-  - year
-  - house
-  - lab
-  - kit
-  - hub
+  - base
+  - span
+  - forge
+  - grove
+  - tide
 
 # Product-leaning pools used for suggestive / descriptive styles.
 nouns:
@@ -183,21 +210,19 @@ benefits:
   - fresh
 
 modifiers:
-  - wise
-  - proof
-  - fit
-  - first
-  - view
-  - look
   - ly
   - ora
   - ivo
   - a
   - o
-  - nest
-  - place
-  - home
-  - room
+  - form
+  - line
+  - path
+  - way
+  - base
+  - lab
+  - kit
+  - hub
 
 tone_words:
   friendly:
@@ -224,36 +249,24 @@ tone_words:
 
 category_stems:
   furniture:
-    - furn
-    - furni
     - habit
-    - room
-    - deco
-    - home
-    - place
-    - nest
-    - liv
+    - loft
     - dwell
     - space
-    - view
-    - fit
+    - form
+    - room
   visualization:
-    - view
-    - look
-    - see
-    - visu
+    - vista
     - scene
-    - preview
-    - show
+    - optic
+    - lumen
+    - prism
   consumer:
-    - try
-    - buy
     - live
     - easy
     - home
     - place
 
-# Phrase templates for descriptive combinations (tokens replaced by vocab)
 phrase_templates:
   - "{verb} it {noun}"
   - "{noun} {verb}"

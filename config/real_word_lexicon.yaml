@@ -1,0 +1,376 @@
+# Curated real English words suitable as brand names.
+# Philosophy: familiar language used in a new context — Stripe, Ramp, Linear,
+# Cursor, Mercury, Arc, Notion energy. NOT invented syllables. NOT mundane
+# office nouns (table, window, pencil).
+#
+# Internal test: "We use ____ at work every day" should sound believable.
+
+# Short, punchy one-syllable words that feel ownable.
+punchy:
+  - arc
+  - beam
+  - bolt
+  - brink
+  - cleft
+  - crest
+  - draft
+  - drift
+  - edge
+  - flint
+  - forge
+  - frame
+  - gleam
+  - grit
+  - hatch
+  - helm
+  - hinge
+  - kiln
+  - latch
+  - loft
+  - loom
+  - marsh
+  - mesh
+  - north
+  - pact
+  - peak
+  - plume
+  - pulse
+  - quay
+  - ridge
+  - rift
+  - rune
+  - sift
+  - span
+  - spark
+  - stack
+  - stride
+  - surge
+  - tide
+  - tint
+  - vault
+  - volt
+  - wick
+  - zest
+
+# Architecture / built world
+architecture:
+  - atrium
+  - axis
+  - canopy
+  - colonnade
+  - draft
+  - facade
+  - facet
+  - form
+  - frame
+  - grid
+  - keystone
+  - lintel
+  - pillar
+  - plaza
+  - span
+  - spire
+  - studio
+  - truss
+  - vault
+
+# Nature / landscape
+nature:
+  - alder
+  - amber
+  - canyon
+  - cedar
+  - cinder
+  - clover
+  - coral
+  - dune
+  - ember
+  - fern
+  - frost
+  - grove
+  - harbor
+  - haze
+  - meadow
+  - moss
+  - pine
+  - river
+  - summit
+  - tidal
+  - willow
+
+# Science / math / tech vocabulary
+science:
+  - atlas
+  - axiom
+  - cipher
+  - delta
+  - flux
+  - helix
+  - ion
+  - lattice
+  - orbit
+  - photon
+  - plasma
+  - prism
+  - quantum
+  - radius
+  - signal
+  - vector
+  - vertex
+
+# Astronomy
+astronomy:
+  - aurora
+  - comet
+  - eclipse
+  - luna
+  - nebula
+  - nova
+  - orion
+  - polaris
+  - pulsar
+  - quasar
+  - solstice
+  - zenith
+
+# Design / craft
+design:
+  - canvas
+  - contour
+  - craft
+  - figure
+  - form
+  - layout
+  - mosaic
+  - motif
+  - palette
+  - pattern
+  - sketch
+  - texture
+
+# Navigation / direction
+navigation:
+  - beacon
+  - compass
+  - current
+  - heading
+  - meridian
+  - north
+  - passage
+  - pathway
+  - voyage
+  - waypoint
+
+# Commerce / finance metaphors (without copying Stripe/Ramp/etc.)
+commerce:
+  - ledger
+  - mint
+  - pledge
+  - quarry
+  - reserve
+  - treasury
+  - venture
+  - yield
+
+# Materials / substance
+materials:
+  - basalt
+  - bronze
+  - copper
+  - crystal
+  - granite
+  - ivory
+  - marble
+  - onyx
+  - quartz
+  - sable
+  - slate
+  - steel
+
+# Abstract / quality words that work as companies
+qualities:
+  - clarity
+  - cordial
+  - earnest
+  - lucid
+  - merit
+  - noble
+  - precise
+  - resolute
+  - sincere
+  - steadfast
+  - vivid
+
+# Motion / action
+motion:
+  - ascend
+  - gather
+  - launch
+  - pivot
+  - rally
+  - rise
+  - shift
+  - thrive
+  - unfold
+
+# Place / geography
+geography:
+  - alpine
+  - arctic
+  - cape
+  - fjord
+  - isle
+  - mesa
+  - sierra
+  - terrace
+
+# Mythology / classical (light touch — real words, not Zeus clones)
+classical:
+  - agora
+  - atlas
+  - aura
+  - echo
+  - iris
+  - kairos
+  - logos
+  - lumen
+  - lyra
+  - muse
+  - nexus
+  - phoenix
+  - soma
+  - terra
+  - titan
+  - vesta
+
+# Soft two-syllable dictionary words with brand energy
+# (Notion / Figma / Canva feel — but actual English words)
+soft_real:
+  - apex
+  - arbor
+  - beacon
+  - cascade
+  - cipher
+  - cordon
+  - corona
+  - cradle
+  - crown
+  - crystal
+  - ember
+  - figment
+  - harbor
+  - haven
+  - iris
+  - ivory
+  - lattice
+  - ledger
+  - lumen
+  - marble
+  - merit
+  - mosaic
+  - nectar
+  - nimbus
+  - orchard
+  - pillar
+  - portal
+  - quarry
+  - raven
+  - ripple
+  - sanctuary
+  - solace
+  - summit
+  - temple
+  - terrace
+  - threshold
+  - timber
+  - torus
+  - vertex
+  - vessel
+  - vantage
+  - zenith
+
+# Words that pair well as compound halves (Basecamp / Mailchimp / GitHub energy).
+compound_left:
+  - clear
+  - open
+  - true
+  - bright
+  - north
+  - fair
+  - calm
+  - bold
+  - prime
+  - pure
+  - solid
+  - swift
+  - quiet
+  - iron
+  - stone
+  - cedar
+  - oak
+  - field
+  - river
+  - harbor
+  - base
+  - mail
+  - digital
+  - git
+  - panda
+  - silver
+  - golden
+  - rapid
+  - smart
+  - fresh
+  - blue
+  - cloud
+  - data
+  - pixel
+  - sound
+  - light
+  - dark
+  - deep
+  - high
+  - wide
+
+# Words that pair well as the right half of a compound brand.
+compound_right:
+  - path
+  - line
+  - form
+  - craft
+  - field
+  - light
+  - mark
+  - base
+  - work
+  - house
+  - gate
+  - hall
+  - yard
+  - ridge
+  - bridge
+  - forge
+  - haven
+  - harbor
+  - span
+  - rise
+  - camp
+  - chimp
+  - ocean
+  - hub
+  - maven
+  - box
+  - lab
+  - desk
+  - book
+  - note
+  - stack
+  - shift
+  - wave
+  - spark
+  - bloom
+  - nest
+  - kit
+  - pack
+  - rope
+  - dock

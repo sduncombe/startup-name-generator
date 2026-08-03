@@ -48,6 +48,16 @@ def _llm_credentials_from_request(request: Request):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+def _ai_requested(request: Request) -> bool:
+    enabled = (request.headers.get("X-LLM-Enabled") or "").strip().lower()
+    if enabled in {"false", "0", "no", "off"}:
+        return False
+    if enabled in {"true", "1", "yes", "on"}:
+        return True
+    # Backward compatibility: supplying a key explicitly requests AI.
+    return bool((request.headers.get("X-LLM-API-Key") or "").strip())
+
+
 @router.post("")
 async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
     db = _db(request)
@@ -64,6 +74,7 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
         "brief": {
             "problem": payload.problem,
             "building": payload.problem,  # legacy alias for older clients
+            "naming_entity": payload.naming_entity,
             "audience": payload.audience,
             "liked_brands": payload.liked_brands,
             "avoid": payload.avoid,
@@ -87,7 +98,15 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
         return {"run": _public_run(run)}
 
     credentials = _llm_credentials_from_request(request)
-    result = await run_full_pipeline(db, run, llm_credentials=credentials)
+    try:
+        result = await run_full_pipeline(
+            db,
+            run,
+            llm_credentials=credentials,
+            ai_requested=_ai_requested(request),
+        )
+    except LlmError as exc:
+        raise HTTPException(status_code=502, detail=f"AI generation failed: {exc}") from exc
     run = await dbmod.get_run(db, run_id)
     candidates = await dbmod.list_candidates(db, run_id, include_rejected=False)
     return {
@@ -125,7 +144,15 @@ async def generate(run_id: str, request: Request) -> dict[str, Any]:
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     credentials = _llm_credentials_from_request(request)
-    result = await generate_for_run(db, run, llm_credentials=credentials)
+    try:
+        result = await generate_for_run(
+            db,
+            run,
+            llm_credentials=credentials,
+            ai_requested=_ai_requested(request),
+        )
+    except LlmError as exc:
+        raise HTTPException(status_code=502, detail=f"AI generation failed: {exc}") from exc
     run = await dbmod.get_run(db, run_id)
     return {"ok": True, "result": result, "run": _public_run(run)}
 
@@ -189,9 +216,34 @@ async def favorite(run_id: str, payload: FavoriteRequest, request: Request) -> d
     run = await dbmod.get_run(db, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
-    ok = await dbmod.set_favorite(db, run_id, payload.name.strip(), payload.favorite)
+    name = payload.name.strip()
+    ok = await dbmod.set_favorite(db, run_id, name, payload.favorite)
     if not ok:
         raise HTTPException(status_code=404, detail="Candidate not found")
+    # Learn from what founders keep — anonymized shape signals only.
+    try:
+        from app.services.favorite_signals import signal_from_name
+
+        cands = await dbmod.list_candidates(db, run_id, include_rejected=True)
+        hit = next((c for c in cands if c.get("name") == name), None)
+        settings = run.get("settings") or {}
+        sig = signal_from_name(
+            name,
+            method=str((hit or {}).get("method") or ""),
+            naming_style=str(settings.get("naming_style") or ""),
+        )
+        await dbmod.record_favorite_signal(
+            db,
+            name_key=sig["key"],
+            length=int(sig["length"]),
+            shape=str(sig["shape"]),
+            method=str(sig["method"]),
+            naming_style=str(sig["naming_style"]),
+            ends_vowel=bool(sig["ends_vowel"]),
+            active=bool(payload.favorite),
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return {"ok": True, "name": payload.name, "favorite": payload.favorite}
 
 
@@ -257,7 +309,7 @@ async def export_csv(
             _csv_safe(c.get("trademark_risk", "")),
             _csv_safe(c.get("trademark_summary", "")),
             _csv_safe(c.get("trademark_reason", "")),
-            _csv_safe(c.get("method", "")),
+            _csv_safe("ai" if c.get("method") == "llm" else "local"),
             c.get("radio_score") if c.get("radio_score") is not None else "",
             _csv_safe(c.get("radio_result", "")),
             _csv_safe("; ".join(spellings)),
@@ -292,6 +344,7 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
         "brand_brief": run.get("brand_brief") or "",
         "problem": brief.get("problem") or brief.get("building") or run["category"],
         "building": brief.get("problem") or brief.get("building") or run["category"],
+        "naming_entity": brief.get("naming_entity") or "",
         "audience": brief.get("audience") or "",
         "liked_brands": brief.get("liked_brands") or "",
         "avoid": brief.get("avoid") or "",
@@ -301,7 +354,7 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
         "primary_language_other": brief.get("primary_language_other")
         or brief.get("primary_market_other")
         or "",
-        "naming_style": settings.get("naming_style") or "brandable",
+        "naming_style": settings.get("naming_style") or "invented",
         "max_length": run["max_length"],
         "extensions": run["extensions"],
         "generate_count": run["generate_count"],
@@ -313,13 +366,14 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
             "conflict_check_top": settings.get("conflict_check_top"),
             "trademark_check_top": settings.get("trademark_check_top"),
             "radio_test_top": settings.get("radio_test_top"),
-            "naming_style": settings.get("naming_style") or "brandable",
+            "naming_style": settings.get("naming_style") or "invented",
         },
     }
 
 
 def _public_candidate(c: dict[str, Any]) -> dict[str, Any]:
     scores = c.get("scores") or {}
+    source = scores.get("source") or ("ai" if c.get("method") == "llm" else "local")
     return {
         "name": c["name"],
         "pronunciation": c.get("pronunciation", ""),
@@ -337,7 +391,10 @@ def _public_candidate(c: dict[str, Any]) -> dict[str, Any]:
         or c.get("direction_description")
         or "",
         "method": c.get("method", ""),
-        "generation_source": c.get("method", ""),
+        "source": source,
+        "generation_source": source,
+        "ai_provider": scores.get("ai_provider") or "",
+        "ai_model": scores.get("ai_model") or "",
         "radio_score": c.get("radio_score"),
         "radio_pass": c.get("radio_pass"),
         "radio_result": c.get("radio_result") or "",

@@ -4,9 +4,12 @@ import re
 from typing import Any
 
 from app.config import blocklist_config, scoring_config, vocabulary_config
+from app.services.brand_quality import credibility_score
 from app.services.filter import compact_key
 from app.services.preferences import PreferenceProfile, preference_bonus, preference_penalty
 from app.services.pronunciation import consecutive_consonants, syllable_count
+from app.services.real_words import is_real_word_candidate
+from app.services.soft_invented import is_soft_invented
 
 
 def score_candidate(
@@ -18,10 +21,15 @@ def score_candidate(
     tone: str,
     domains: dict[str, Any] | None = None,
     conflict_level: str = "Not checked",
-    naming_style: str = "brandable",
+    naming_style: str = "invented",
     preferences: PreferenceProfile | None = None,
+    favorite_profile: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from app.services.favorite_signals import favorite_affinity_bonus
+    from app.services.naming_style import normalize_naming_style
+
     cfg = scoring_config()
+    naming_style = normalize_naming_style(naming_style)
     weights = dict(cfg.get("weights", {}) or {})
     style_overrides = (cfg.get("style_weights") or {}).get(naming_style) or {}
     weights.update({k: float(v) for k, v in style_overrides.items()})
@@ -35,10 +43,11 @@ def score_candidate(
 
     pronounce = _pronounceability(key, syll, syll_cfg)
     spelling = _spelling_clarity(key)
-    memory = _memorability(key, method, syll)
+    cred = credibility_score(name, method=method)
+    memory = _memorability(key, method, syll, credibility=cred)
     length_score = _length_score(length, length_cfg)
     relevance = _category_relevance(key, category, keywords, tone, naming_style=naming_style)
-    flexibility = _brand_flexibility(key, method)
+    flexibility = _brand_flexibility(key, method, credibility=cred)
     domain_score = _domain_availability(domains or {})
 
     components = {
@@ -49,13 +58,23 @@ def score_candidate(
         "category_relevance": round(relevance, 1),
         "brand_flexibility": round(flexibility, 1),
         "domain_availability": round(domain_score, 1),
+        "brand_credibility": round(cred, 1),
     }
 
     # weights sum to 100; each component is 0-100; contribution = component * weight/100
+    # brand_credibility is optional in older scoring.yaml — fold into total when present
     total = sum(components.get(k, 0) * float(weights.get(k, 0)) / 100.0 for k in weights)
+    total += favorite_affinity_bonus(name, favorite_profile)
 
     penalty = 0.0
     notes: list[str] = []
+
+    if cred < 55:
+        penalty += float(penalties_cfg.get("low_credibility", 22))
+        notes.append("low brand credibility")
+    elif cred < 65:
+        penalty += float(penalties_cfg.get("low_credibility", 22)) * 0.35
+        notes.append("borderline credibility")
 
     if consecutive_consonants(key) >= 3:
         penalty += float(penalties_cfg.get("hard_pronunciation", 25)) * 0.4
@@ -126,6 +145,8 @@ def _spelling_clarity(key: str) -> float:
             score -= 12
     if re.search(r"[aeiou]{3,}", key):
         score -= 15
+    if re.search(r"(ae|ao|uu)", key):
+        score -= 20
     if re.search(r"(.)\1\1", key):
         score -= 25
     # Prefer simple alphabet
@@ -134,18 +155,25 @@ def _spelling_clarity(key: str) -> float:
     return max(0, min(100, score))
 
 
-def _memorability(key: str, method: str, syll: int) -> float:
-    score = 70.0
-    if method in {"compound", "evocative", "invented", "suggestive", "modified_category"}:
-        score += 12
-    elif method == "descriptive":
-        score += 4
-    if 5 <= len(key) <= 9:
-        score += 10
-    if syll in (2, 3):
+def _memorability(key: str, method: str, syll: int, *, credibility: float = 60.0) -> float:
+    score = 55.0
+    # Credibility drives memorability — inventeds get no free points.
+    score += (credibility - 50) * 0.45
+    if method == "descriptive":
+        score -= 4
+    if method == "real_word":
         score += 8
-    if key.endswith(("a", "o", "ora", "ivo", "ly", "en", "el")):
-        score += 5
+    if is_soft_invented(key):
+        score -= 25
+    if 5 <= len(key) <= 8:
+        score += 10
+    if syll in (1, 2):
+        score += 8
+    elif syll == 3:
+        score += 3
+    # Real brand endings — not AI *ly / soft inventeds.
+    if key.endswith(("a", "o", "y", "en", "el", "on", "ar", "us", "ia")):
+        score += 4
     return max(0, min(100, score))
 
 
@@ -168,12 +196,14 @@ def _category_relevance(
     keywords: list[str],
     tone: str,
     *,
-    naming_style: str = "brandable",
+    naming_style: str = "invented",
 ) -> float:
     vocab = vocabulary_config()
-    # Brandable: keyword-in-name is not a virtue (Apple does not contain "computer").
-    if naming_style == "brandable":
+    # Invented / real-word / compound: keyword-in-name is not a virtue.
+    if naming_style in {"invented", "real_word", "compound"}:
         score = 55.0
+        if naming_style == "real_word" and is_real_word_candidate(key):
+            score += 18
         tone_l = tone.lower()
         for label, words in (vocab.get("tone_words") or {}).items():
             if label in tone_l:
@@ -213,16 +243,19 @@ def _category_relevance(
     return max(0, min(100, score))
 
 
-def _brand_flexibility(key: str, method: str) -> float:
-    score = 65.0
-    if method in {"invented", "evocative"}:
-        score += 18
+def _brand_flexibility(key: str, method: str, *, credibility: float = 60.0) -> float:
+    score = 58.0
+    # Flexible only if the name also feels ownable / intentional.
+    if method in {"invented", "evocative", "real_word"} and credibility >= 70:
+        score += 16
+    elif method in {"invented", "evocative", "real_word"}:
+        score += 4
     if method in {"suggestive", "modified_category"}:
-        score += 10
-    if method == "compound":
-        score += 6
+        score += 8
+    if method == "compound" and credibility >= 65:
+        score += 8
     if method == "descriptive":
-        score -= 10
+        score -= 12
         if " " in key:
             score -= 15
     if len(key) <= 8:

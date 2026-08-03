@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from app.services.naming_entity import get_naming_entity, normalize_naming_entity
 from app.services.preferences import (
     build_preference_profile,
     language_display,
@@ -167,6 +168,8 @@ class InferredBrief:
     audience: str
     liked_brands: str
     avoid: str
+    naming_entity: str = ""
+    naming_entity_label: str = ""
     primary_language: str = "en-global"
     primary_language_other: str = ""
     preference_traits: list[str] | None = None
@@ -184,18 +187,34 @@ def compose_brand_brief(
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
+    naming_entity: str = "",
     primary_language: str = "en-global",
     primary_language_other: str = "",
 ) -> str:
     problem_text = (problem or building).strip()
-    parts = [f"Problem we're solving: {problem_text}"]
+    entity = get_naming_entity(naming_entity)
+    parts: list[str] = []
+    if entity:
+        parts.append(f"What we're naming: {entity.label}")
+        parts.append(entity.framing)
+    parts.append(f"Problem we're solving: {problem_text}")
     parts.append(f"Primary language: {language_display(primary_language, primary_language_other)}")
     if audience.strip():
         parts.append(f"Target audience: {audience.strip()}")
     if liked_brands.strip():
-        parts.append(f"Brands we like (style cues only, do not copy): {liked_brands.strip()}")
+        parts.append(
+            "Brands whose naming style we admire (extract patterns — never copy the names): "
+            + liked_brands.strip()
+        )
+        parts.append(
+            "Desired naming characteristics from those brands: short, memorable, "
+            "commercially believable, easy to pronounce, easy to spell after hearing, "
+            "timeless, not trendy, not AI-generated."
+        )
     if avoid.strip():
-        parts.append(f"Avoid: {avoid.strip()}")
+        parts.append(f"Hard avoid (do not generate names that violate these): {avoid.strip()}")
+    if entity and entity.guidance:
+        parts.append(f"Entity naming rules: {entity.guidance}")
     return "\n".join(parts)
 
 
@@ -231,6 +250,7 @@ def infer_brief(
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
+    naming_entity: str = "",
     primary_language: str = "en-global",
     primary_language_other: str = "",
     primary_market: str | None = None,  # legacy ignored
@@ -243,6 +263,8 @@ def infer_brief(
     audience = (audience or "").strip()
     liked_brands = (liked_brands or "").strip()
     avoid = (avoid or "").strip()
+    entity_code = normalize_naming_entity(naming_entity)
+    entity = get_naming_entity(entity_code)
     lang, lang_other = normalize_language(primary_language, primary_language_other)
     prefs = build_preference_profile(
         primary_language=lang,
@@ -290,6 +312,7 @@ def infer_brief(
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,
+        naming_entity=entity_code,
         primary_language=lang,
         primary_language_other=lang_other,
     )
@@ -302,6 +325,8 @@ def infer_brief(
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,
+        naming_entity=entity_code,
+        naming_entity_label=entity.label if entity else "",
         primary_language=lang,
         primary_language_other=lang_other,
         preference_traits=sorted(prefs.traits),
@@ -314,6 +339,7 @@ METHOD_DIRECTIONS = {
     "invented": ("Invented & distinctive", "Fresh coinages that still feel pronounceable."),
     "evocative": ("Evocative & abstract", "Feeling and imagery first. Meaning comes from the brand."),
     "suggestive": ("Suggestive twists", "Hints at the space without spelling out the product."),
+    "real_word": ("Familiar brands", "Existing words used in a new context — memorable, ownable, commercially believable."),
     "modified_category": ("Suggestive twists", "Hints at the space without spelling out the product."),
     "modified": ("Suggestive twists", "Hints at the space without spelling out the product."),
     "llm": ("Creative AI directions", "Names brainstormed from your brief."),

@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Namegen</title>
+  <link rel="icon" href="/static/namegen-mark.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/static/namegen-logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,20 +16,60 @@
 
   <nav class="nav">
     <div class="nav-inner">
-      <span class="wordmark"><span class="mark"></span>Namegen</span>
-      <span class="nav-meta">Open source · Local-first · BYOK AI</span>
+      <span class="wordmark">
+        <img class="mark" src="/static/namegen-mark.svg" width="20" height="20" alt="" />
+        Namegen
+      </span>
+      <span class="nav-meta">Open source · BYOK AI</span>
     </div>
   </nav>
 
   <main class="app">
     <header class="hero">
       <h1>Find a name<br /><span class="dim">worth building around.</span></h1>
-      <p class="lede">For companies, apps, podcasts, nonprofits, communities, and personal brands. Start with the problem. We generate brandable names and check domains and trademarks.</p>
+      <p class="lede">For companies, apps, podcasts, nonprofits, communities, and personal brands. Start with the problem. We shortlist names worth building around — and check domains and trademarks.</p>
     </header>
 
     <section class="composer" id="brief">
       <form id="runForm">
         <div class="composer-input">
+          <div class="composer-entity">
+            <span class="composer-label" id="namingEntityLabel">What are you naming?</span>
+            <input type="hidden" name="naming_entity" id="namingEntity" value="" required />
+            <div class="entity-picker" id="entityPicker">
+              <button
+                type="button"
+                class="entity-trigger"
+                id="entityTrigger"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-labelledby="namingEntityLabel entityTriggerLabel"
+              >
+                <span class="entity-trigger-text is-placeholder" id="entityTriggerLabel">Select one…</span>
+                <svg class="entity-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <ul class="entity-menu" id="entityMenu" role="listbox" aria-labelledby="namingEntityLabel" hidden>
+                <li role="option" data-value="software_company" data-label="Software company">Software company</li>
+                <li role="option" data-value="mobile_app" data-label="Mobile app">Mobile app</li>
+                <li role="option" data-value="ai_company" data-label="AI company">AI company</li>
+                <li role="option" data-value="local_business" data-label="Local business">Local business</li>
+                <li role="option" data-value="local_furniture_retailer" data-label="Local furniture retailer">Local furniture retailer</li>
+                <li role="option" data-value="professional_services" data-label="Professional services firm">Professional services firm</li>
+                <li role="option" data-value="restaurant_cafe" data-label="Restaurant or café">Restaurant or café</li>
+                <li role="option" data-value="consumer_brand" data-label="Consumer brand">Consumer brand</li>
+                <li role="option" data-value="hardware_company" data-label="Hardware company">Hardware company</li>
+                <li role="option" data-value="podcast" data-label="Podcast">Podcast</li>
+                <li role="option" data-value="newsletter" data-label="Newsletter">Newsletter</li>
+                <li role="option" data-value="youtube_channel" data-label="YouTube channel">YouTube channel</li>
+                <li role="option" data-value="nonprofit" data-label="Nonprofit">Nonprofit</li>
+                <li role="option" data-value="personal_brand" data-label="Personal brand">Personal brand</li>
+              </ul>
+            </div>
+            <p class="entity-hint">This shapes the entire naming exercise — a software company and a local store should never get the same kind of names.</p>
+          </div>
+
           <label class="composer-label" for="problem">What problem are you solving?</label>
           <textarea
             name="problem"
@@ -40,6 +82,7 @@
             <div class="composer-left">
               <button type="button" class="chip" data-toggle="moreAbout">Brand preferences</button>
               <button type="button" class="chip" data-toggle="advanced">Advanced</button>
+              <button type="button" class="chip ai-indicator" id="aiIndicator" data-toggle="advanced">AI off</button>
             </div>
             <button type="submit" id="btnCreate">
               Generate
@@ -52,22 +95,26 @@
           <summary>Brand preferences</summary>
           <div class="drawer-body">
             <fieldset class="field naming-style">
-              <legend class="label">Naming style</legend>
-              <div class="segmented" role="radiogroup" aria-label="Naming style">
+              <legend class="label">Naming philosophy</legend>
+              <div class="segmented segmented-4" role="radiogroup" aria-label="Naming philosophy">
                 <label class="seg">
-                  <input type="radio" name="naming_style" value="brandable" checked />
-                  <span>Brandable</span>
+                  <input type="radio" name="naming_style" value="invented" checked />
+                  <span>Invented</span>
                 </label>
                 <label class="seg">
-                  <input type="radio" name="naming_style" value="balanced" />
-                  <span>Balanced</span>
+                  <input type="radio" name="naming_style" value="real_word" />
+                  <span>Real Words</span>
+                </label>
+                <label class="seg">
+                  <input type="radio" name="naming_style" value="compound" />
+                  <span>Compound</span>
                 </label>
                 <label class="seg">
                   <input type="radio" name="naming_style" value="descriptive" />
                   <span>Descriptive</span>
                 </label>
               </div>
-              <p class="field-hint">Brandable (default) favors invented and abstract names you can grow into. Descriptive leans toward names that say what you do.</p>
+              <p class="field-hint" id="namingStyleHint">Purpose-built brands that still feel natural — like Figma, Canva, or Houzz.</p>
             </fieldset>
             <div class="grid-2">
               <div class="field">
@@ -146,12 +193,14 @@
               </label>
               <label class="field">
                 <span class="label">Brands you like</span>
-                <input name="liked_brands" type="text" placeholder="Airbnb, Notion, Stripe" />
+                <input name="liked_brands" type="text" placeholder="Stripe, Cursor, Figma, Houzz, Notion, Linear" />
+                <p class="field-hint">Companies whose naming style you admire — short, memorable, believable. They don’t need to be competitors; we learn the pattern, not the name.</p>
               </label>
             </div>
             <label class="field">
               <span class="label">What to avoid</span>
-              <input name="avoid" type="text" placeholder="AI-sounding, enterprise, hard to pronounce" />
+              <input name="avoid" type="text" placeholder="Invented words, AI-sounding, -ly, -ify, Vision, Home, Furniture" />
+              <p class="field-hint">Be specific. Ban roots, themes, and suffixes you never want (e.g. AI, VR, -ly, hard to pronounce).</p>
             </label>
           </div>
         </details>
@@ -166,7 +215,7 @@
               </label>
               <label class="field">
                 <span class="label">How many names</span>
-                <input name="generate_count" type="number" min="50" max="10000" value="400" />
+                <input name="generate_count" type="number" min="12" max="2000" value="24" />
               </label>
             </div>
             <label class="field">
@@ -176,11 +225,15 @@
 
             <div class="ai-block">
               <div class="ai-head">
-                <span class="label">AI creativity <span class="tag">optional</span></span>
-                <span class="ai-status" id="byokStatus">No key</span>
+                <label class="switch ai-toggle">
+                  <input type="checkbox" id="aiEnabled" />
+                  <span class="track"><span class="thumb"></span></span>
+                  <span class="switch-label">Use AI (BYOK)</span>
+                </label>
+                <span class="ai-status" id="byokStatus">Disabled</span>
               </div>
-              <p class="ai-note">Local naming always runs. Add your own key for extra creative directions. It stays in this tab and is never stored on the server.</p>
-              <div class="grid-3">
+              <p class="ai-note">On: every name comes from your provider — no local filler. Off: local generator only. Your key stays in this tab and is never stored on the server.</p>
+              <div class="grid-3" id="aiFields">
                 <label class="field">
                   <span class="label">Provider</span>
                   <select id="llmProvider">
@@ -212,6 +265,7 @@
     </section>
 
     <section class="results" id="resultsSection" hidden>
+      <div class="ai-run-summary" id="aiRunSummary" hidden></div>
       <div id="directions" class="directions"></div>
 
       <div class="toolbar">
@@ -230,6 +284,7 @@
             <tr>
               <th data-sort="favorite" class="col-fav">★</th>
               <th data-sort="name">Name</th>
+              <th data-sort="source">Source</th>
               <th data-sort="total_score">Score</th>
               <th data-sort="com">Domain</th>
               <th data-sort="trademark_risk">Trademark</th>

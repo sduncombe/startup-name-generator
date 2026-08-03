@@ -28,6 +28,18 @@ exact_reject:
   - article
   - parlour
   - ambient
+  - stripe
+  - slack
+  - notion
+  - sonos
+  - monzo
+  - vercel
+  - linear
+  - brex
+  - ramp
+  - nubank
+  - airtable
+  - perplexity
 
 # Substrings that flag high/possible conflict when present as a whole word or stem
 brand_stems:
@@ -64,3 +76,17 @@ confusing_terms:
   - sex
   - nazi
   - hell
+  - puke
+  - vomit
+  - poop
+  - piss
+  - crap
+  - damn
+  - slut
+  - rape
+  - kill
+  - dead
+  - rape
+  - drugs
+  - cocaine
+  - heroin

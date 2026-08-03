@@ -1,5 +1,5 @@
-# Controlled syllable inventory for invented names (CV / CVC style).
-# Keep these easy to say in English and French.
+# Controlled inventory for light phonotactic coinages.
+# Prefer brand_lexicon.yaml roots for inventeds; these are a fallback only.
 
 onsets:
   - b
@@ -17,26 +17,25 @@ onsets:
   - n
   - p
   - pl
+  - pr
   - r
   - s
+  - sl
   - st
+  - str
   - t
   - tr
   - v
   - w
   - z
 
+# Single-letter nuclei only. Multi-letter nuclei created Booflar-class junk.
 nuclei:
   - a
   - e
   - i
   - o
   - u
-  - ai
-  - ee
-  - oo
-  - or
-  - ar
 
 codas:
   - ""
@@ -46,35 +45,36 @@ codas:
   - r
   - s
   - t
-  - d
   - k
 
-# Preferred ending syllables that sound brand-like
+# Brand-like soft endings only (no product words).
 endings:
   - a
   - o
+  - y
+  - ly
+  - el
+  - en
+  - on
+  - ar
   - or
-  - ora
-  - ivo
-  - ivo
-  - lyn
-  - wise
-  - fit
-  - view
-  - proof
-  - sure
-  - nest
-  - place
-  - home
-  - room
-  - live
-  - look
+  - us
+  - ix
+  - ia
+  - io
+  - ra
+  - va
+  - ma
+  - na
+  - cel
+  - lin
 
 patterns:
-  - CV-CV
-  - CVC-CV
-  - CV-CVC
-  - CVC-CVC
+  - CVC
+  - CVCV
+  - CVCV
+  - CVCVC
+  - CCVC
 
 ambiguous_clusters:
   - xq
@@ -86,12 +86,15 @@ ambiguous_clusters:
   - pq
   - nstl
   - rnx
-  - xq
   - yy
   - uu
   - iii
   - aaa
   - ooo
   - eee
+  - ae
+  - ao
+  - flar
+  - oofl
 
 max_consecutive_consonants: 3

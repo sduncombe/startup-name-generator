@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Namegen">
+  <rect width="64" height="64" rx="14" fill="#0d0e12"/>
+  <!-- Bold N: full left stem, diagonal, shorter right stem -->
+  <path fill="#2dd4a8" d="
+    M14 13c0-1.2 1-2.2 2.2-2.2h7.4c.8 0 1.5.4 1.9 1.1L40 40.6V18.5c0-1.2 1-2.2 2.2-2.2H48c1.2 0 2.2 1 2.2 2.2v18.8c0 1.2-1 2.2-2.2 2.2h-7.4c-.8 0-1.5-.4-1.9-1.1L24.5 19.4V51c0 1.2-1 2.2-2.2 2.2H16.2C15 53.2 14 52.2 14 51V13z
+  "/>
+  <!-- Dot above shortened right stem (reads as i) -->
+  <circle cx="45.1" cy="24.2" r="2.8" fill="#2dd4a8"/>
+  <!-- Spark / generate accent -->
+  <path fill="#2dd4a8" d="M45.1 11.4l1.35 3.55 3.55 1.35-3.55 1.35-1.35 3.55-1.35-3.55-3.55-1.35 3.55-1.35 1.35-3.55z"/>
+</svg>

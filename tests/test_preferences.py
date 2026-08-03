@@ -44,7 +44,7 @@ def test_japanese_generation_prefers_open_syllables():
         tone="Friendly",
         max_length=10,
         count=80,
-        naming_style="brandable",
+        naming_style="invented",
         primary_language="ja",
     )
     keys = ["".join(ch for ch in n.name.lower() if ch.isalpha()) for n in names]
@@ -63,7 +63,7 @@ def test_avoid_and_liked_change_ranking():
         category="software",
         keywords=["software"],
         tone="Modern",
-        naming_style="brandable",
+        naming_style="invented",
         preferences=avoid_prefs,
     )
     clean = score_candidate(
@@ -72,7 +72,7 @@ def test_avoid_and_liked_change_ranking():
         category="software",
         keywords=["software"],
         tone="Modern",
-        naming_style="brandable",
+        naming_style="invented",
         preferences=liked_prefs,
     )
     assert clean["total_score"] > ai_name["total_score"]
@@ -85,7 +85,7 @@ def test_liked_brands_shift_method_mix():
         tone="Minimal",
         max_length=10,
         count=120,
-        naming_style="brandable",
+        naming_style="invented",
         liked_brands="Notion, Stripe, Linear",
     )
     counts = Counter(c.method for c in abstract)
