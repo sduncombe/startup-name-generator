@@ -81,6 +81,11 @@ def test_one_click_pipeline_without_keys(client):
     assert body["result"]["directions"]
     # Directions should organize ideas even without AI
     assert any(c.get("direction") for c in body["candidates"])
+    # Trademark screening runs automatically as part of the pipeline
+    assert body["result"]["trademarks"]["checked"] > 0
+    screened = [c for c in body["candidates"] if c.get("trademark_risk")]
+    assert screened
+    assert all(c["trademark_risk"] in ("low", "medium", "high") for c in screened)
 
 
 def test_create_without_pipeline_still_works(client):

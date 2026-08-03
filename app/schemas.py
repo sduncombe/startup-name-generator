@@ -27,6 +27,7 @@ class RunCreate(BaseModel):
     generate_count: int = Field(default=400, ge=50, le=10000)
     domain_check_top: int = Field(default=40, ge=0, le=2000)
     conflict_check_top: int = Field(default=40, ge=0, le=500)
+    trademark_check_top: int = Field(default=40, ge=0, le=500)
     radio_test_top: int | None = Field(default=None, ge=0, le=2000)
 
     # When true, create run then generate + domain + conflict in one request
@@ -97,4 +98,8 @@ class DomainCheckRequest(BaseModel):
 
 
 class ConflictCheckRequest(BaseModel):
+    top_n: int | None = Field(default=None, ge=1, le=500)
+
+
+class TrademarkCheckRequest(BaseModel):
     top_n: int | None = Field(default=None, ge=1, le=500)

@@ -17,6 +17,7 @@ from app.services.llm import LlmCredentials, LlmError, generate_names_from_brief
 from app.services.pronunciation import pronounce_guide
 from app.services.radio_test import radio_test
 from app.services.scorer import score_candidate
+from app.services.trademark_screen import screen_name
 
 logger = logging.getLogger(__name__)
 
@@ -282,7 +283,7 @@ async def run_full_pipeline(
     *,
     llm_credentials: LlmCredentials | None = None,
 ) -> dict[str, Any]:
-    """One-click: generate → score/radio → domains → conflicts."""
+    """One-click: generate → score/radio → domains → conflicts → trademark screen."""
     gen = await generate_for_run(db, run, llm_credentials=llm_credentials)
     run = await dbmod.get_run(db, run["id"]) or run
     domains = {"checked": 0, "skipped": 0}
@@ -293,11 +294,62 @@ async def run_full_pipeline(
         run = await dbmod.get_run(db, run["id"]) or run
     if int(run_settings.get("conflict_check_top") or 0) > 0:
         conflicts = await check_conflicts_for_run(db, run)
+        run = await dbmod.get_run(db, run["id"]) or run
+    trademarks = await check_trademarks_for_run(db, run)
     return {
         **gen,
         "domains": domains,
         "conflicts": conflicts,
+        "trademarks": trademarks,
     }
+
+
+async def check_trademarks_for_run(
+    db: aiosqlite.Connection,
+    run: dict[str, Any],
+    *,
+    top_n: int | None = None,
+) -> dict[str, Any]:
+    """Deterministic USPTO-data trademark screening for the top candidates."""
+    run_settings = run.get("settings") or {}
+    n = top_n if top_n is not None else int(run_settings.get("trademark_check_top") or 40)
+    candidates = await dbmod.list_candidates(db, run["id"], include_rejected=False)
+    candidates = candidates[:n]
+
+    await dbmod.update_run_status(
+        db,
+        run["id"],
+        "checking_trademarks",
+        {"phase": "trademarks", "target": len(candidates), "done": 0},
+    )
+
+    counts = {"low": 0, "medium": 0, "high": 0}
+    done = 0
+    for c in candidates:
+        result = screen_name(
+            c["name"],
+            category=run["category"],
+            keywords=run["keywords"],
+        )
+        counts[result.risk] = counts.get(result.risk, 0) + 1
+        await dbmod.update_candidate_trademark(
+            db,
+            run["id"],
+            c["name"],
+            risk=result.risk,
+            summary=result.summary,
+            reason=result.reason,
+            matches=[m.to_dict() for m in result.matches],
+        )
+        done += 1
+
+    await dbmod.update_run_status(
+        db,
+        run["id"],
+        "ready",
+        {"phase": "trademarks", "target": len(candidates), "done": done},
+    )
+    return {"checked": done, **counts}
 
 
 async def check_domains_for_run(

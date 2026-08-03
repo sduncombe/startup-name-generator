@@ -42,10 +42,19 @@
       .join("");
   }
 
+  function riskRank(c) {
+    const r = String(c.trademark_risk || "");
+    if (r === "high") return 3;
+    if (r === "medium") return 2;
+    if (r === "low") return 1;
+    return 0;
+  }
+
   function scoreOf(c, key) {
     if (key === "total_score") return Number(c.total_score || 0);
     if (key === "name") return String(c.name || "").toLowerCase();
     if (key === "conflict_level") return String(c.conflict_level || "");
+    if (key === "trademark_risk" || key === "risk") return riskRank(c);
     if (key === "radio_result") return String(c.radio_result || "");
     if (key === "favorite") return c.favorite ? 1 : 0;
     if (key === "com") return domainStatus(c, ".com");
@@ -60,7 +69,8 @@
       c.conflict_level === "Not checked" ||
       String(c.conflict_level).startsWith("Low");
     const radioOk = !c.radio_result || c.radio_result === "pass";
-    return (comOk || anyOk) && conflictOk && radioOk;
+    const tmOk = c.trademark_risk !== "high";
+    return (comOk || anyOk) && conflictOk && radioOk && tmOk;
   }
 
   function filtered() {
@@ -88,11 +98,16 @@
     return rows;
   }
 
-  function conflictClass(level) {
-    if (String(level).startsWith("High")) return "conflict-high";
-    if (String(level).startsWith("Possible")) return "conflict-possible";
-    if (String(level).startsWith("Low")) return "conflict-low";
-    return "";
+  function trademarkLabel(c) {
+    if (!c.trademark_risk) return "Not checked";
+    return c.trademark_summary || "None found";
+  }
+
+  function riskCell(c) {
+    const r = String(c.trademark_risk || "");
+    if (!r) return "<span class='risk-badge'>-</span>";
+    const label = r.charAt(0).toUpperCase() + r.slice(1);
+    return `<span class="risk-badge risk-${r}"><span class="risk-dot"></span>${label}</span>`;
   }
 
   function radioLabel(c) {
@@ -103,6 +118,7 @@
 
   function notesFor(c) {
     const bits = [];
+    if (c.trademark_reason && c.trademark_risk !== "low") bits.push(c.trademark_reason);
     if (c.radio_explanation) bits.push(c.radio_explanation);
     if (c.conflict_notes) bits.push(c.conflict_notes);
     const alts = (c.radio_spellings || []).join(", ");
@@ -183,7 +199,8 @@
         <td class="name-cell"><strong>${escapeHtml(c.name)}</strong><div class="pron">${escapeHtml(c.pronunciation || "")}</div></td>
         <td>${Number(c.total_score || 0).toFixed(1)}</td>
         <td><div class="domain-stack">${bestDomainSummary(c)}</div></td>
-        <td class="${conflictClass(c.conflict_level)}">${escapeHtml(c.conflict_level || "-")}</td>
+        <td class="tm-cell" title="${escapeAttr(c.trademark_reason || "")}">${escapeHtml(trademarkLabel(c))}</td>
+        <td title="${escapeAttr(c.trademark_reason || "")}">${riskCell(c)}</td>
         <td class="radio-${c.radio_result || ""}" title="${escapeAttr(c.radio_explanation || "")}">${escapeHtml(radioLabel(c))}</td>
         <td class="notes">${escapeHtml(notesFor(c))}</td>
       </tr>`,
@@ -298,6 +315,7 @@
     const fd = new FormData($("runForm"));
     const domainTop = 40;
     const conflictTop = 40;
+    const trademarkTop = 40;
     const payload = {
       building: String(fd.get("building") || ""),
       audience: String(fd.get("audience") || ""),
@@ -311,6 +329,7 @@
         .filter(Boolean),
       domain_check_top: domainTop,
       conflict_check_top: conflictTop,
+      trademark_check_top: trademarkTop,
       run_pipeline: false,
     };
 
@@ -341,6 +360,12 @@
       await api(`/api/runs/${runId}/check-conflicts`, {
         method: "POST",
         body: JSON.stringify({ top_n: conflictTop }),
+      });
+
+      setBusy(true, "Screening trademarks…");
+      await api(`/api/runs/${runId}/check-trademarks`, {
+        method: "POST",
+        body: JSON.stringify({ top_n: trademarkTop }),
       });
 
       setBusy(true, "Preparing results…");

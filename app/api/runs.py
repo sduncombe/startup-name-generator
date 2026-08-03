@@ -10,11 +10,18 @@ from fastapi.responses import StreamingResponse
 
 from app import db as dbmod
 from app.config import domains_config, scoring_config
-from app.schemas import ConflictCheckRequest, DomainCheckRequest, FavoriteRequest, RunCreate
+from app.schemas import (
+    ConflictCheckRequest,
+    DomainCheckRequest,
+    FavoriteRequest,
+    RunCreate,
+    TrademarkCheckRequest,
+)
 from app.services.llm import LlmError, resolve_credentials
 from app.services.pipeline import (
     check_conflicts_for_run,
     check_domains_for_run,
+    check_trademarks_for_run,
     generate_for_run,
     run_full_pipeline,
 )
@@ -50,6 +57,7 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
     settings = {
         "domain_check_top": payload.domain_check_top,
         "conflict_check_top": payload.conflict_check_top,
+        "trademark_check_top": payload.trademark_check_top,
         "radio_test_top": payload.radio_test_top,
         "scoring": scoring_config(),
         "brief": {
@@ -155,6 +163,22 @@ async def check_conflicts(
     return {"ok": True, "result": result, "run": _public_run(run)}
 
 
+@router.post("/{run_id}/check-trademarks")
+async def check_trademarks(
+    run_id: str,
+    request: Request,
+    payload: TrademarkCheckRequest | None = None,
+) -> dict[str, Any]:
+    db = _db(request)
+    run = await dbmod.get_run(db, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    body = payload or TrademarkCheckRequest()
+    result = await check_trademarks_for_run(db, run, top_n=body.top_n)
+    run = await dbmod.get_run(db, run_id)
+    return {"ok": True, "result": result, "run": _public_run(run)}
+
+
 @router.post("/{run_id}/favorite")
 async def favorite(run_id: str, payload: FavoriteRequest, request: Request) -> dict[str, Any]:
     db = _db(request)
@@ -195,6 +219,9 @@ async def export_csv(
         "length_score",
         "conflict_level",
         "conflict_notes",
+        "trademark_risk",
+        "trademark_summary",
+        "trademark_reason",
         "generation_source",
         "radio_score",
         "radio_result",
@@ -223,6 +250,9 @@ async def export_csv(
             scores.get("length", ""),
             _csv_safe(c.get("conflict_level", "")),
             _csv_safe(c.get("conflict_notes", "")),
+            _csv_safe(c.get("trademark_risk", "")),
+            _csv_safe(c.get("trademark_summary", "")),
+            _csv_safe(c.get("trademark_reason", "")),
             _csv_safe(c.get("method", "")),
             c.get("radio_score") if c.get("radio_score") is not None else "",
             _csv_safe(c.get("radio_result", "")),
@@ -269,6 +299,7 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
         "settings": {
             "domain_check_top": settings.get("domain_check_top"),
             "conflict_check_top": settings.get("conflict_check_top"),
+            "trademark_check_top": settings.get("trademark_check_top"),
             "radio_test_top": settings.get("radio_test_top"),
         },
     }
@@ -284,6 +315,10 @@ def _public_candidate(c: dict[str, Any]) -> dict[str, Any]:
         "domains": c.get("domains") or {},
         "conflict_level": c.get("conflict_level", "Not checked"),
         "conflict_notes": c.get("conflict_notes", ""),
+        "trademark_risk": c.get("trademark_risk", ""),
+        "trademark_summary": c.get("trademark_summary", ""),
+        "trademark_reason": c.get("trademark_reason", ""),
+        "trademark_matches": c.get("trademark_matches") or [],
         "direction": scores.get("direction") or c.get("direction") or "",
         "direction_description": scores.get("direction_description")
         or c.get("direction_description")

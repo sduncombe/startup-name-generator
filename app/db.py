@@ -44,6 +44,10 @@ CREATE TABLE IF NOT EXISTS candidates (
     radio_spellings TEXT NOT NULL DEFAULT '[]',
     radio_explanation TEXT NOT NULL DEFAULT '',
     radio_result TEXT NOT NULL DEFAULT '',
+    trademark_risk TEXT NOT NULL DEFAULT '',
+    trademark_summary TEXT NOT NULL DEFAULT '',
+    trademark_reason TEXT NOT NULL DEFAULT '',
+    trademark_matches TEXT NOT NULL DEFAULT '[]',
     UNIQUE(run_id, name),
     FOREIGN KEY(run_id) REFERENCES runs(id) ON DELETE CASCADE
 );
@@ -68,6 +72,10 @@ MIGRATIONS = [
     ("radio_spellings", "ALTER TABLE candidates ADD COLUMN radio_spellings TEXT NOT NULL DEFAULT '[]'"),
     ("radio_explanation", "ALTER TABLE candidates ADD COLUMN radio_explanation TEXT NOT NULL DEFAULT ''"),
     ("radio_result", "ALTER TABLE candidates ADD COLUMN radio_result TEXT NOT NULL DEFAULT ''"),
+    ("trademark_risk", "ALTER TABLE candidates ADD COLUMN trademark_risk TEXT NOT NULL DEFAULT ''"),
+    ("trademark_summary", "ALTER TABLE candidates ADD COLUMN trademark_summary TEXT NOT NULL DEFAULT ''"),
+    ("trademark_reason", "ALTER TABLE candidates ADD COLUMN trademark_reason TEXT NOT NULL DEFAULT ''"),
+    ("trademark_matches", "ALTER TABLE candidates ADD COLUMN trademark_matches TEXT NOT NULL DEFAULT '[]'"),
 ]
 
 
@@ -290,6 +298,7 @@ async def list_candidates(
         data["rejected"] = bool(data["rejected"])
         data["favorite"] = bool(data["favorite"])
         data["radio_spellings"] = loads(data.get("radio_spellings") or "[]", [])
+        data["trademark_matches"] = loads(data.get("trademark_matches") or "[]", [])
         if data.get("radio_pass") is not None:
             data["radio_pass"] = bool(data["radio_pass"])
         out.append(data)
@@ -362,6 +371,27 @@ async def update_candidate_conflict(
             """,
             (level, notes, total_score, dumps(scores), run_id, name),
         )
+    await db.commit()
+
+
+async def update_candidate_trademark(
+    db: aiosqlite.Connection,
+    run_id: str,
+    name: str,
+    *,
+    risk: str,
+    summary: str,
+    reason: str,
+    matches: list[dict[str, Any]],
+) -> None:
+    await db.execute(
+        """
+        UPDATE candidates
+        SET trademark_risk = ?, trademark_summary = ?, trademark_reason = ?, trademark_matches = ?
+        WHERE run_id = ? AND name = ?
+        """,
+        (risk, summary, reason, dumps(matches), run_id, name),
+    )
     await db.commit()
 
 

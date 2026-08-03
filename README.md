@@ -8,7 +8,7 @@ Open-source utility that generates pronounceable product and company names, scor
 
 Designed around effortlessness (Apple HIG *principles*, not Apple’s look): one primary action, progressive disclosure, sensible defaults, and content-first results.
 
-Ask what you’re building → **Generate**. Optional brand details and Advanced stay collapsed. The app infers keywords/tone, then runs scoring, radio test, domains, and conflicts with live progress (“Generating names…”, “Checking domains…”, …).
+Ask what you’re building → **Generate**. Optional brand details and Advanced stay collapsed. The app infers keywords/tone, then runs scoring, radio test, domains, conflicts, and trademark screening with live progress (“Generating names…”, “Checking domains…”, “Screening trademarks…”).
 
 Results dominate the page: naming directions first, then a tight comparison table. Filter with search or **Usable only**.
 
@@ -18,7 +18,27 @@ Results dominate the page: naming directions first, then a tight comparison tabl
 - Deterministic scoring (weights in `config/scoring.yaml`)
 - Heuristic radio test (pronunciation, alternate spellings, pass/fail)
 - Deterministic conflict heuristics + RDAP domain checks
+- Built-in trademark screening with a simple Low / Medium / High risk indicator
 - Favorites, filtering, sorting, saved sessions, CSV export
+
+## Trademark screening
+
+Every generated name is automatically screened for trademark risk as the final pipeline step. The screening is fully deterministic, no AI involved:
+
+- **Exact match** against registered wordmarks (highest severity)
+- **Similar spelling** via Levenshtein distance and Jaro-Winkler similarity (Livora vs. Livorah)
+- **Phonetic similarity** via Soundex and a phonetic-key algorithm (Homio vs. Homeo)
+- **Nice class weighting**: a similar mark in your industry matters far more than one in an unrelated class. Likely classes are inferred from your brief.
+
+Each name gets a risk indicator with a plain-language explanation:
+
+- **Low**: no similar live marks found
+- **Medium**: a similar live trademark exists in the same industry
+- **High**: an exact live trademark exists; consider another name
+
+The bundled dataset (`config/trademarks.yaml`) covers well-known live US marks derived from public USPTO records. The USPTO’s Trademark Search system has no public REST API (and its keyed TSDR API only supports lookup by serial number), so real-time register queries aren’t possible without scraping, which this project avoids. For deeper coverage, set `TRADEMARK_DATA_PATH` to a larger file in the same YAML format built from the [official USPTO bulk data](https://data.uspto.gov/).
+
+Trademark screening is provided as an informational tool only and is not legal advice. Always consult a qualified trademark attorney before adopting a brand.
 
 ## Optional AI (Bring Your Own Key)
 

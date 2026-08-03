@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     domain_check_concurrency: int = 3
     domain_check_timeout_seconds: float = 8.0
 
+    # Optional larger screening dataset built from official USPTO bulk data.
+    trademark_data_path: str = ""
+
     # BYOK is the public default. Server-side keys are opt-in for private deploys only.
     allow_server_llm_keys: bool = False
     llm_provider: str = "anthropic"
