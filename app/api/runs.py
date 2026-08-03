@@ -59,6 +59,7 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
         "conflict_check_top": payload.conflict_check_top,
         "trademark_check_top": payload.trademark_check_top,
         "radio_test_top": payload.radio_test_top,
+        "naming_style": payload.naming_style,
         "scoring": scoring_config(),
         "brief": {
             "building": payload.building,
@@ -290,6 +291,7 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
         "audience": brief.get("audience") or "",
         "liked_brands": brief.get("liked_brands") or "",
         "avoid": brief.get("avoid") or "",
+        "naming_style": settings.get("naming_style") or "brandable",
         "max_length": run["max_length"],
         "extensions": run["extensions"],
         "generate_count": run["generate_count"],
@@ -301,6 +303,7 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
             "conflict_check_top": settings.get("conflict_check_top"),
             "trademark_check_top": settings.get("trademark_check_top"),
             "radio_test_top": settings.get("radio_test_top"),
+            "naming_style": settings.get("naming_style") or "brandable",
         },
     }
 

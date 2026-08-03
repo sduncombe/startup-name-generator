@@ -132,6 +132,7 @@ async def generate_names_from_brief(
     max_length: int,
     credentials: LlmCredentials,
     count: int | None = None,
+    naming_style: str = "brandable",
 ) -> LlmGenerationResult:
     if not brand_brief.strip():
         return LlmGenerationResult()
@@ -147,6 +148,7 @@ async def generate_names_from_brief(
         brand_brief=brand_brief,
         max_length=max_length,
         count=target,
+        naming_style=naming_style,
     )
 
     provider = credentials.provider
@@ -186,6 +188,23 @@ async def generate_names_from_brief(
     return parsed
 
 
+_STYLE_GUIDANCE = {
+    "brandable": (
+        "Prefer inventeds, abstracts, evocatives, and light compounds "
+        "(Apple, Stripe, Slack, Notion energy). Do NOT name the product literally. "
+        "Avoid stuffing category keywords into the name. Meaning can come later from the brand."
+    ),
+    "balanced": (
+        "Mix inventeds, evocatives, compounds, suggestives, and a few descriptive names. "
+        "Favor brandable ownability over SEO-style product phrases."
+    ),
+    "descriptive": (
+        "Lean toward clear, suggestive, and descriptive names that hint at what the product does, "
+        "while still staying short and pronounceable."
+    ),
+}
+
+
 def _build_prompt(
     *,
     category: str,
@@ -194,8 +213,11 @@ def _build_prompt(
     brand_brief: str,
     max_length: int,
     count: int,
+    naming_style: str = "brandable",
 ) -> str:
     kw = ", ".join(keywords) if keywords else "(none)"
+    style = naming_style if naming_style in _STYLE_GUIDANCE else "brandable"
+    style_note = _STYLE_GUIDANCE[style]
     return f"""You are a consumer brand naming strategist helping name a company.
 
 Your only job is creative naming directions and candidate names.
@@ -215,6 +237,7 @@ Requirements:
 - Infer category, keywords, and tone from the brief yourself.
 - Propose 3–5 distinct naming directions grounded in the brief.
 - Propose about {count} candidate brand names total across those directions.
+- Naming style preference: {style}. {style_note}
 - Names must be easy to pronounce and spell after hearing once.
 - Prefer 5–{max_length} letters, 2–3 syllables, no numbers/hyphens/punctuation.
 - Suitable in English and French markets.

@@ -321,6 +321,7 @@
       audience: String(fd.get("audience") || ""),
       liked_brands: String(fd.get("liked_brands") || ""),
       avoid: String(fd.get("avoid") || ""),
+      naming_style: String(fd.get("naming_style") || "brandable"),
       max_length: Number(fd.get("max_length")),
       generate_count: Number(fd.get("generate_count")),
       extensions: String(fd.get("extensions") || "")

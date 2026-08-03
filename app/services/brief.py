@@ -245,7 +245,10 @@ METHOD_DIRECTIONS = {
     "descriptive": ("Clear & descriptive", "Straightforward names that say what the product does."),
     "compound": ("Familiar compounds", "Two everyday ideas joined into something ownable."),
     "invented": ("Invented & distinctive", "Fresh coinages that still feel pronounceable."),
-    "modified": ("Twists on known stems", "Slight alterations that keep recognition without copying."),
+    "evocative": ("Evocative & abstract", "Feeling and imagery first. Meaning comes from the brand."),
+    "suggestive": ("Suggestive twists", "Hints at the space without spelling out the product."),
+    "modified_category": ("Suggestive twists", "Hints at the space without spelling out the product."),
+    "modified": ("Suggestive twists", "Hints at the space without spelling out the product."),
     "llm": ("Creative AI directions", "Names brainstormed from your brief."),
 }
 

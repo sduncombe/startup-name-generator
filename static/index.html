@@ -22,7 +22,7 @@
   <main class="app">
     <header class="hero">
       <h1>Find the perfect name<br /><span class="dim">for your company.</span></h1>
-      <p class="lede">Describe what you’re building. We generate pronounceable names, score them, and check domains and conflicts instantly.</p>
+      <p class="lede">Describe what you’re building. We generate brandable, pronounceable names, score them, and check domains and trademarks.</p>
     </header>
 
     <section class="composer" id="brief">
@@ -50,6 +50,24 @@
         <details class="drawer" id="moreAbout">
           <summary>Brand preferences</summary>
           <div class="drawer-body">
+            <fieldset class="field naming-style">
+              <legend class="label">Naming style</legend>
+              <div class="segmented" role="radiogroup" aria-label="Naming style">
+                <label class="seg">
+                  <input type="radio" name="naming_style" value="brandable" checked />
+                  <span>Brandable</span>
+                </label>
+                <label class="seg">
+                  <input type="radio" name="naming_style" value="balanced" />
+                  <span>Balanced</span>
+                </label>
+                <label class="seg">
+                  <input type="radio" name="naming_style" value="descriptive" />
+                  <span>Descriptive</span>
+                </label>
+              </div>
+              <p class="field-hint">Brandable (default) favors invented and abstract names you can grow into. Descriptive leans toward names that say what you do.</p>
+            </fieldset>
             <div class="grid-2">
               <label class="field">
                 <span class="label">Who is it for?</span>
@@ -57,7 +75,7 @@
               </label>
               <label class="field">
                 <span class="label">Brands you like</span>
-                <input name="liked_brands" type="text" placeholder="Airbnb, Notion, Houzz" />
+                <input name="liked_brands" type="text" placeholder="Airbnb, Notion, Stripe" />
               </label>
             </div>
             <label class="field">

@@ -17,9 +17,12 @@ def score_candidate(
     tone: str,
     domains: dict[str, Any] | None = None,
     conflict_level: str = "Not checked",
+    naming_style: str = "brandable",
 ) -> dict[str, Any]:
     cfg = scoring_config()
-    weights = cfg.get("weights", {})
+    weights = dict(cfg.get("weights", {}) or {})
+    style_overrides = (cfg.get("style_weights") or {}).get(naming_style) or {}
+    weights.update({k: float(v) for k, v in style_overrides.items()})
     penalties_cfg = cfg.get("penalties", {})
     length_cfg = cfg.get("length", {})
     syll_cfg = cfg.get("syllables", {})
@@ -32,7 +35,7 @@ def score_candidate(
     spelling = _spelling_clarity(key)
     memory = _memorability(key, method, syll)
     length_score = _length_score(length, length_cfg)
-    relevance = _category_relevance(key, category, keywords, tone)
+    relevance = _category_relevance(key, category, keywords, tone, naming_style=naming_style)
     flexibility = _brand_flexibility(key, method)
     domain_score = _domain_availability(domains or {})
 
@@ -46,10 +49,7 @@ def score_candidate(
         "domain_availability": round(domain_score, 1),
     }
 
-    total = 0.0
-    for k, w in weights.items():
-        total += components.get(k, 0) * (float(w) / 100.0) * 100.0 / 100.0
-        # weights sum to 100; each component is 0-100; contribution = component * weight/100
+    # weights sum to 100; each component is 0-100; contribution = component * weight/100
     total = sum(components.get(k, 0) * float(weights.get(k, 0)) / 100.0 for k in weights)
 
     penalty = 0.0
@@ -127,13 +127,15 @@ def _spelling_clarity(key: str) -> float:
 
 def _memorability(key: str, method: str, syll: int) -> float:
     score = 70.0
-    if method in {"compound", "descriptive", "modified_category"}:
+    if method in {"compound", "evocative", "invented", "suggestive", "modified_category"}:
         score += 12
+    elif method == "descriptive":
+        score += 4
     if 5 <= len(key) <= 9:
         score += 10
     if syll in (2, 3):
         score += 8
-    if key.endswith(("a", "o", "ora", "ivo", "wise", "fit", "view")):
+    if key.endswith(("a", "o", "ora", "ivo", "ly", "en", "el")):
         score += 5
     return max(0, min(100, score))
 
@@ -151,8 +153,29 @@ def _length_score(length: int, length_cfg: dict) -> float:
     return 20.0
 
 
-def _category_relevance(key: str, category: str, keywords: list[str], tone: str) -> float:
+def _category_relevance(
+    key: str,
+    category: str,
+    keywords: list[str],
+    tone: str,
+    *,
+    naming_style: str = "brandable",
+) -> float:
     vocab = vocabulary_config()
+    # Brandable: keyword-in-name is not a virtue (Apple does not contain "computer").
+    if naming_style == "brandable":
+        score = 55.0
+        tone_l = tone.lower()
+        for label, words in (vocab.get("tone_words") or {}).items():
+            if label in tone_l:
+                for w in words or []:
+                    if w is None or isinstance(w, bool):
+                        continue
+                    ws = str(w).lower()
+                    if ws and ws in key:
+                        score += 5
+        return max(0, min(100, score))
+
     score = 40.0
     tokens = set(keywords)
     for word in (category.lower().replace(",", " ").split()):
@@ -183,12 +206,16 @@ def _category_relevance(key: str, category: str, keywords: list[str], tone: str)
 
 def _brand_flexibility(key: str, method: str) -> float:
     score = 65.0
-    if method == "invented":
-        score += 15
-    if method == "modified_category":
+    if method in {"invented", "evocative"}:
+        score += 18
+    if method in {"suggestive", "modified_category"}:
         score += 10
-    if method == "descriptive" and " " in key:
-        score -= 20
+    if method == "compound":
+        score += 6
+    if method == "descriptive":
+        score -= 10
+        if " " in key:
+            score -= 15
     if len(key) <= 8:
         score += 10
     return max(0, min(100, score))

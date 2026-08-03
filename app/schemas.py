@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -15,6 +15,9 @@ class RunCreate(BaseModel):
     audience: str = Field(default="", max_length=1000)
     liked_brands: str = Field(default="", max_length=500)
     avoid: str = Field(default="", max_length=1000)
+
+    # Naming philosophy: brandable (default) favors invented/abstract names
+    naming_style: Literal["brandable", "balanced", "descriptive"] = "brandable"
 
     # Optional / advanced (inferred when omitted)
     category: str = Field(default="", max_length=200)

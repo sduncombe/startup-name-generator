@@ -260,6 +260,69 @@ body.has-results .app { padding-top: 40px; }
 
 .field { display: block; margin-bottom: 10px; min-width: 0; }
 
+.naming-style {
+  border: 0;
+  padding: 0;
+  margin: 0 0 14px;
+}
+
+.naming-style .label { margin-bottom: 8px; }
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+}
+
+.seg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+}
+
+.seg input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.seg span {
+  width: 100%;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.seg input:checked + span {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+}
+
+.seg input:focus-visible + span {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.field-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--faint);
+  line-height: 1.45;
+}
+
 .label {
   display: block;
   margin-bottom: 5px;

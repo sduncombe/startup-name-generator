@@ -46,6 +46,9 @@ async def generate_for_run(
         },
     )
 
+    run_settings = run.get("settings") or {}
+    naming_style = str(run_settings.get("naming_style") or "brandable")
+
     # 1) Local generation
     generator = NameGenerator()
     local = generator.generate(
@@ -54,6 +57,7 @@ async def generate_for_run(
         tone=run["tone"],
         max_length=max_length,
         count=count,
+        naming_style=naming_style,
     )
 
     by_key: dict[str, dict[str, Any]] = {}
@@ -67,6 +71,7 @@ async def generate_for_run(
             category=run["category"],
             keywords=run["keywords"],
             tone=run["tone"],
+            naming_style=naming_style,
         )
         by_key[key] = {
             "name": cand.name,
@@ -122,6 +127,7 @@ async def generate_for_run(
                 keywords=run["keywords"],
                 tone=run["tone"],
                 brand_brief=brand_brief,
+                naming_style=naming_style,
                 max_length=max_length,
                 credentials=llm_credentials,
             )
@@ -142,6 +148,7 @@ async def generate_for_run(
                     category=run["category"],
                     keywords=run["keywords"],
                     tone=run["tone"],
+                    naming_style=naming_style,
                 )
                 # LLM names win on collision so the brief is reflected in the table
                 direction = (item.direction or "").strip() or "Creative AI directions"
@@ -428,6 +435,7 @@ async def check_domains_for_run(
             tone=run["tone"],
             domains=domains,
             conflict_level=candidate.get("conflict_level", "Not checked"),
+            naming_style=str((run.get("settings") or {}).get("naming_style") or "brandable"),
         )
         _preserve_direction(candidate, scored["scores"])
         await dbmod.update_candidate_domains(
@@ -492,6 +500,7 @@ async def check_conflicts_for_run(
             tone=run["tone"],
             domains=c.get("domains") or {},
             conflict_level=result.level,
+            naming_style=str((run.get("settings") or {}).get("naming_style") or "brandable"),
         )
         _preserve_direction(c, scored["scores"])
         await dbmod.update_candidate_conflict(

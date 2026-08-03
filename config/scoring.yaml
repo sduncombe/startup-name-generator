@@ -7,6 +7,19 @@ weights:
   brand_flexibility: 10
   domain_availability: 10
 
+# Per naming-style weight overrides (merged onto weights above).
+# Brandable rewards flexibility over keyword-in-name relevance.
+style_weights:
+  brandable:
+    category_relevance: 4
+    brand_flexibility: 16
+    memorability: 18
+  balanced: {}
+  descriptive:
+    category_relevance: 18
+    brand_flexibility: 6
+    memorability: 12
+
 penalties:
   existing_company_match: 40
   existing_app_match: 30

@@ -8,7 +8,9 @@ Open-source utility that generates pronounceable product and company names, scor
 
 Designed around effortlessness (Apple HIG *principles*, not Apple’s look): one primary action, progressive disclosure, sensible defaults, and content-first results.
 
-Ask what you’re building → **Generate**. Optional brand details and Advanced stay collapsed. The app infers keywords/tone, then runs scoring, radio test, domains, conflicts, and trademark screening with live progress (“Generating names…”, “Checking domains…”, “Screening trademarks…”).
+Ask what you’re building → **Generate**. Optional brand preferences and Advanced stay collapsed. The app infers keywords/tone, then runs scoring, radio test, domains, conflicts, and trademark screening with live progress (“Generating names…”, “Checking domains…”, “Screening trademarks…”).
+
+Naming style defaults to **Brandable**: inventeds, abstracts, evocatives, and light compounds (Stripe / Notion / Slack energy), not SEO-style product phrases. Switch to Balanced or Descriptive under Brand preferences when you want more literal names.
 
 Results dominate the page: naming directions first, then a tight comparison table. Filter with search or **Usable only**.
 

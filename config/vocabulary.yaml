@@ -1,3 +1,117 @@
+# Abstract roots for brandable / evocative naming. Prefer these when the
+# naming style is Brandable; they deliberately avoid product vocabulary.
+abstract_roots:
+  - nova
+  - lumen
+  - vera
+  - lyra
+  - aura
+  - ridge
+  - forge
+  - pulse
+  - grove
+  - harbor
+  - ember
+  - quill
+  - sable
+  - terra
+  - solace
+  - meridian
+  - atlas
+  - orion
+  - vexel
+  - kith
+  - rune
+  - canopy
+  - drift
+  - flint
+  - hollow
+  - ivory
+  - jade
+  - kiln
+  - loft
+  - moss
+  - north
+  - opal
+  - pebble
+  - quilt
+  - raven
+  - silt
+  - tide
+  - umbra
+  - vale
+  - willow
+  - zenith
+  - amber
+  - bolt
+  - cinder
+  - dune
+  - echo
+  - frost
+  - glow
+  - haze
+  - iris
+  - jot
+  - knot
+  - lumen
+  - meadow
+  - nectar
+  - orbit
+  - prism
+  - quark
+  - ripple
+  - spark
+  - tint
+  - vault
+  - whisper
+  - yarn
+  - zest
+
+evocative_left:
+  - bright
+  - calm
+  - clear
+  - cool
+  - deep
+  - fair
+  - free
+  - gentle
+  - gold
+  - kind
+  - light
+  - open
+  - pure
+  - quiet
+  - soft
+  - still
+  - true
+  - warm
+  - wild
+  - bold
+
+evocative_right:
+  - bloom
+  - craft
+  - field
+  - form
+  - gate
+  - haven
+  - land
+  - line
+  - path
+  - rise
+  - side
+  - stone
+  - way
+  - work
+  - yard
+  - year
+  - house
+  - lab
+  - kit
+  - hub
+
+# Product-leaning pools used for suggestive / descriptive styles.
 nouns:
   - home
   - room
