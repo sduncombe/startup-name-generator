@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     database_path: str = "data/runs.db"
     host: str = "127.0.0.1"
     port: int = 8000
-    public_app_url: str = "https://names.seanduncombe.com"
+    public_app_url: str = "https://seanduncombe.com/apps/namegen"
     github_repo_url: str = "https://github.com/sduncombe/startup-name-generator"
 
     domain_provider: str = "rdap"

@@ -1,22 +1,24 @@
-# Namegen
+# Namegen (Python reference)
 
 Open-source brand name generator for companies, apps, podcasts, nonprofits, communities, and personal brands. It generates pronounceable names, scores them, runs a heuristic radio (spell-after-hearing) test, checks domains via RDAP, screens trademarks, and optionally uses **your own** AI provider key (BYOK).
 
-> **Not part of duncombe-web.** This repository is standalone. [seanduncombe.com](https://seanduncombe.com) only links to the deployed app.
+## Live product
+
+The production app now runs **on seanduncombe.com**:
+
+**[https://seanduncombe.com/apps/namegen](https://seanduncombe.com/apps/namegen)**
+
+That version is a Nitro/TypeScript port inside [`duncombe-web`](https://github.com/sduncombe/duncombe-web). This repository remains the MIT-licensed Python/FastAPI reference and a self-hostable standalone deploy.
 
 ## Product experience
 
-Designed around effortlessness (Apple HIG *principles*, not Apple’s look): one primary action, progressive disclosure, sensible defaults, and content-first results.
-
-Ask **What problem are you solving?** → **Generate**. Optional brand preferences (naming style, primary language, audience, liked brands, avoid) and Advanced stay collapsed. Every preference changes generation or scoring: language shapes phonotactics, audience and liked brands shift tone and style traits, and avoid actively penalizes matching names. The app then runs scoring, radio test, domains, conflicts, and trademark screening with live progress.
-
-Naming style defaults to **Brandable**: inventeds, abstracts, evocatives, and light compounds (Stripe / Notion / Slack energy), not SEO-style product phrases. Switch to Balanced or Descriptive under Brand preferences when you want more literal names.
+Ask **What are you naming?** and **What problem are you solving?** → **Generate**. Optional brand preferences (naming philosophy, primary language, audience, liked brands, avoid) and Advanced stay collapsed. Naming philosophies: **Invented**, **Real Words**, **Compound**, **Descriptive**.
 
 Results dominate the page: naming directions first, then a tight comparison table. Filter with search or **Usable only**.
 
 ## Features (always free / local)
 
-- Pronounceable local name generation (descriptive, compound, invented, modified stems)
+- Pronounceable local name generation (descriptive, compound, invented, evocative, suggestive, real words)
 - Deterministic scoring (weights in `config/scoring.yaml`)
 - Heuristic radio test (pronunciation, alternate spellings, pass/fail)
 - Deterministic conflict heuristics + RDAP domain checks
@@ -28,74 +30,38 @@ Results dominate the page: naming directions first, then a tight comparison tabl
 Every generated name is automatically screened for trademark risk as the final pipeline step. The screening is fully deterministic, no AI involved:
 
 - **Exact match** against registered wordmarks (highest severity)
-- **Similar spelling** via Levenshtein distance and Jaro-Winkler similarity (Livora vs. Livorah)
-- **Phonetic similarity** via Soundex and a phonetic-key algorithm (Homio vs. Homeo)
-- **Nice class weighting**: a similar mark in your industry matters far more than one in an unrelated class. Likely classes are inferred from your brief.
+- **Similar spelling** via Levenshtein distance and Jaro-Winkler similarity
+- **Phonetic similarity** via Soundex and a phonetic-key algorithm
+- **Nice class weighting**: a similar mark in your industry matters far more than one in an unrelated class
 
-Each name gets a risk indicator with a plain-language explanation:
+Default deploy ships a **sample** trademark dataset for demo only. Import USPTO bulk data for real screening (see below / `tools/import_uspto.py`).
 
-- **Low**: no similar live marks found
-- **Medium**: a similar live trademark exists in the same industry
-- **High**: an exact live trademark exists; consider another name
+## BYOK AI (optional)
 
-### Data source: sample data by default, USPTO bulk data for production
+Public mode never uses host LLM keys. Paste your own Anthropic / OpenAI / xAI / Gemini key in Advanced; it stays in `sessionStorage` and is sent only as ephemeral `X-LLM-*` headers.
 
-The engine is data-source agnostic. Out of the box it loads `config/trademarks.sample.yaml`, a tiny sample dataset (a few dozen famous marks) that exists only so contributors can clone the repository and immediately run the app. **It is not a trademark database** and the UI says so whenever the sample dataset is active.
-
-For production-quality screening, import the official USPTO bulk trademark data (the USPTO’s Trademark Search system has no public REST API, and its keyed TSDR API only supports lookup by serial number, so real-time register queries aren’t possible without scraping, which this project avoids):
-
-1. Download “Trademark applications” XML files (e.g. `apc*.zip`) from the [USPTO bulk data portal](https://data.uspto.gov/). No account needed.
-2. Convert them into the screening dataset format:
+## Quick start (standalone Python)
 
 ```bash
-python tools/import_uspto.py apc*.zip -o data/uspto-trademarks.json
-```
-
-3. Point the app at the imported dataset:
-
-```bash
-TRADEMARK_DATA_PATH=data/uspto-trademarks.json uvicorn app.main:app
-```
-
-The importer is deterministic and offline: it streams the XML, keeps wordmarks with their status (Live / Pending / Dead, mapped from official USPTO status codes) and Nice classes, dedupes, and writes JSON or YAML. `--classes 9,42` restricts to specific Nice classes; `--include-dead` keeps dead marks. Any file in the same format works; the engine does not care where the data comes from.
-
-Trademark screening is provided as an informational tool only and is not legal advice. Always consult a qualified trademark attorney before adopting a brand.
-
-## Optional AI (Bring Your Own Key)
-
-AI is used only for **creative naming directions and brainstorm names**. Scoring, domains, conflicts, radio, and pronunciation stay code-only.
-
-Supported providers: OpenAI, Anthropic, xAI, Gemini.
-
-Security model:
-
-- Keys live in **browser `sessionStorage`** only for the tab session
-- Sent to this app’s server in **`X-LLM-*` headers** for that request only (never in the URL)
-- **Never** written to SQLite, logs, analytics, or source
-- **Clear key** removes the session entry
-- Public deployment has **no** host API keys and `ALLOW_SERVER_LLM_KEYS=false`
-
-## Quick start
-
-```bash
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Leave paid keys empty for public-mode local testing
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn app.main:app --reload --port 8000
 ```
 
 Open http://127.0.0.1:8000
+
+## Tests
 
 ```bash
 pip install pytest httpx
 pytest -q
 ```
 
-## Deploy
+## Deploy (standalone)
 
-See [DEPLOY.md](./DEPLOY.md) for DigitalOcean / Docker and the `names.seanduncombe.com` custom domain plan.
+See [DEPLOY.md](./DEPLOY.md) for Docker / DigitalOcean self-hosting. The old `names.seanduncombe.com` plan is retired in favor of the on-site app.
 
 ## Layout
 

@@ -1,6 +1,6 @@
-# DigitalOcean App Platform spec (reference).
-# Deploy from the startup-name-generator repo, NOT duncombe-web.
-# Point names.seanduncombe.com at this app after creation (DNS not applied here).
+# DigitalOcean App Platform spec (reference) for standalone Python self-host.
+# Production Namegen lives in duncombe-web at /apps/namegen.
+# Deploy from the startup-name-generator repo only for a separate instance.
 
 name: startup-name-generator
 region: nyc
@@ -28,7 +28,7 @@ services:
         value: "/data/runs.db"
         scope: RUN_TIME
       - key: PUBLIC_APP_URL
-        value: "https://names.seanduncombe.com"
+        value: "https://your-host.example"
         scope: RUN_TIME
       - key: GITHUB_REPO_URL
         value: "https://github.com/sduncombe/startup-name-generator"
