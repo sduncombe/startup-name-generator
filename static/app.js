@@ -23,40 +23,45 @@
     return ((c.domains || {})[ext] || {}).status || "";
   }
 
+  function bestDomainSummary(c) {
+    const order = [".com", ".app", ".co"];
+    const parts = [];
+    for (const ext of order) {
+      const st = domainStatus(c, ext);
+      if (st) parts.push({ ext, st });
+    }
+    if (!parts.length) return "—";
+    return parts
+      .map((p) => `<span class="status-pill ${p.st}">${p.ext} ${p.st}</span>`)
+      .join(" ");
+  }
+
   function scoreOf(c, key) {
     if (key === "total_score") return Number(c.total_score || 0);
     if (key === "radio_score") return Number(c.radio_score ?? -1);
     if (key === "name") return String(c.name || "").toLowerCase();
-    if (key === "pronunciation") return String(c.pronunciation || "").toLowerCase();
     if (key === "conflict_level") return String(c.conflict_level || "");
     if (key === "method") return String(c.method || "");
     if (key === "radio_result") return String(c.radio_result || "");
-    if (key === "radio_spellings") return (c.radio_spellings || []).join(",");
     if (key === "favorite") return c.favorite ? 1 : 0;
     if (key === "com") return domainStatus(c, ".com");
-    if (key === "app") return domainStatus(c, ".app");
-    if (key === "co") return domainStatus(c, ".co");
     return Number((c.scores || {})[key] || 0);
   }
 
   function filtered() {
     const q = $("search").value.trim().toLowerCase();
     const minScore = Number($("minScore").value || 0);
-    const maxChars = Number($("maxChars").value || 20);
     const needCom = $("filterCom").checked;
     const needAny = $("filterAny").checked;
     const lowOnly = $("filterLow").checked;
-    const llmOnly = $("filterLlm").checked;
     const radioPass = $("filterRadioPass").checked;
     const favOnly = $("filterFav").checked;
 
     let rows = state.candidates.slice();
     rows = rows.filter((c) => {
       if (favOnly && !c.favorite) return false;
-      if (llmOnly && c.method !== "llm") return false;
       if (radioPass && c.radio_result !== "pass") return false;
       if (Number(c.total_score || 0) < minScore) return false;
-      if (slugLen(c.name) > maxChars) return false;
       if (q && !String(c.name).toLowerCase().includes(q) && !String(c.pronunciation).toLowerCase().includes(q)) {
         return false;
       }
@@ -79,11 +84,6 @@
     return rows;
   }
 
-  function pill(status) {
-    const s = status || "—";
-    return `<span class="status-pill ${status || "unknown"}">${s}</span>`;
-  }
-
   function conflictClass(level) {
     if (String(level).startsWith("High")) return "conflict-high";
     if (String(level).startsWith("Possible")) return "conflict-possible";
@@ -91,46 +91,98 @@
     return "";
   }
 
-  function renderDirections(run) {
-    const box = $("llmBox");
-    const list = $("llmDirections");
+  function radioLabel(c) {
+    if (!c.radio_result) return "—";
+    const score = c.radio_score == null ? "" : ` ${Number(c.radio_score).toFixed(0)}`;
+    return `${c.radio_result}${score}`;
+  }
+
+  function notesFor(c) {
+    const bits = [];
+    if (c.radio_explanation) bits.push(c.radio_explanation);
+    if (c.conflict_notes) bits.push(c.conflict_notes);
+    const alts = (c.radio_spellings || []).join(", ");
+    if (alts) bits.push(`Also sounds like: ${alts}`);
+    return bits.join(" · ") || "—";
+  }
+
+  function renderDirections(run, candidates) {
+    const box = $("directions");
     const dirs = (run && run.llm && run.llm.directions) || [];
-    if (!dirs.length) {
+    const rows = candidates || [];
+    if (!dirs.length && !rows.length) {
       box.hidden = true;
-      list.innerHTML = "";
+      box.innerHTML = "";
       return;
     }
-    box.hidden = false;
-    list.innerHTML = dirs.map((d) => {
-      return `<li><strong>${escapeHtml(d.name || "")}</strong> — ${escapeHtml(d.description || "")}</li>`;
-    }).join("");
+
+    const byDir = new Map();
+    for (const d of dirs) {
+      const name = d.name || "Ideas";
+      byDir.set(name, {
+        name,
+        description: d.description || "",
+        names: [],
+      });
+    }
+    for (const c of rows) {
+      const label = c.direction || "Other ideas";
+      if (!byDir.has(label)) {
+        byDir.set(label, {
+          name: label,
+          description: c.direction_description || "",
+          names: [],
+        });
+      }
+      byDir.get(label).names.push(c);
+    }
+
+    const cards = [...byDir.values()]
+      .map((d) => {
+        const top = d.names
+          .slice()
+          .sort((a, b) => Number(b.total_score || 0) - Number(a.total_score || 0))
+          .slice(0, 5);
+        if (!top.length) return "";
+        const items = top
+          .map((c) => {
+            const com = domainStatus(c, ".com");
+            const hint = com ? `.com ${com}` : `score ${Number(c.total_score || 0).toFixed(0)}`;
+            return `<li><strong>${escapeHtml(c.name)}</strong><span class="mini">${escapeHtml(hint)}</span></li>`;
+          })
+          .join("");
+        return `<article class="direction-card">
+          <h3>${escapeHtml(d.name)}</h3>
+          <p class="dir-desc">${escapeHtml(d.description || "")}</p>
+          <ul class="direction-names">${items}</ul>
+        </article>`;
+      })
+      .filter(Boolean);
+
+    box.hidden = !cards.length;
+    box.innerHTML = cards.length
+      ? `<div class="results-head"><h2>Naming directions</h2><p class="hint">Creative paths first — details below.</p></div>${cards.join("")}`
+      : "";
   }
 
   function renderTable() {
     const rows = filtered();
-    tbody.innerHTML = rows.map((c) => {
-      const spellings = (c.radio_spellings || []).join(", ") || "—";
-      const radioScore = c.radio_score == null ? "—" : Number(c.radio_score).toFixed(0);
-      const radioResult = c.radio_result || "—";
-      const sourceClass = c.method === "llm" ? "src-llm" : "src-local";
-      return `<tr>
+    tbody.innerHTML = rows
+      .map((c) => {
+        const sourceClass = c.method === "llm" ? "src-llm" : "src-local";
+        return `<tr>
         <td class="fav ${c.favorite ? "on" : ""}" data-name="${escapeAttr(c.name)}">${c.favorite ? "★" : "☆"}</td>
-        <td><strong>${escapeHtml(c.name)}</strong></td>
-        <td>${escapeHtml(c.pronunciation || "")}</td>
+        <td><strong>${escapeHtml(c.name)}</strong><div class="mini hint">${escapeHtml(c.pronunciation || "")}</div></td>
         <td>${Number(c.total_score || 0).toFixed(1)}</td>
+        <td><div class="domain-stack">${bestDomainSummary(c)}</div></td>
+        <td class="${conflictClass(c.conflict_level)}">${escapeHtml(c.conflict_level || "—")}</td>
+        <td class="radio-${c.radio_result || ""}" title="${escapeAttr(c.radio_explanation || "")}">${escapeHtml(radioLabel(c))}</td>
         <td><span class="src ${sourceClass}">${escapeHtml(c.method || "")}</span></td>
-        <td>${radioScore}</td>
-        <td class="radio-${radioResult}">${escapeHtml(radioResult)}</td>
-        <td class="spellings" title="${escapeAttr(c.radio_explanation || "")}">${escapeHtml(spellings)}</td>
-        <td>${pill(domainStatus(c, ".com"))}</td>
-        <td>${pill(domainStatus(c, ".app"))}</td>
-        <td>${pill(domainStatus(c, ".co"))}</td>
-        <td class="${conflictClass(c.conflict_level)}">${escapeHtml(c.conflict_level || "")}</td>
-        <td>${escapeHtml(c.conflict_notes || c.radio_explanation || "")}</td>
+        <td class="notes">${escapeHtml(notesFor(c))}</td>
       </tr>`;
-    }).join("");
-    const llmCount = state.candidates.filter((c) => c.method === "llm").length;
-    $("count").textContent = `${rows.length} shown / ${state.candidates.length} total (${llmCount} llm)`;
+      })
+      .join("");
+    $("count").textContent = `${rows.length} shown / ${state.candidates.length} total`;
   }
 
   function escapeHtml(str) {
@@ -163,11 +215,9 @@
     const { provider, key, model } = readByok();
     $("llmProvider").value = provider;
     $("llmModel").value = model;
-    // Never re-populate the password field from storage into a copyable visible value
-    // beyond the masked input the user just typed; show status only.
     $("byokStatus").textContent = key
       ? `AI key: set for this session (${provider}${model ? ", " + model : ""})`
-      : "AI key: not set — AI naming disabled until you paste a key";
+      : "AI key: not set — local generation still works";
   }
 
   function llmHeaders() {
@@ -192,54 +242,57 @@
         const body = await res.json();
         detail = body.detail || JSON.stringify(body);
       } catch (_) { /* ignore */ }
-      throw new Error(detail);
+      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
     }
     const ct = res.headers.get("content-type") || "";
     if (ct.includes("application/json")) return res.json();
     return res;
   }
 
-  function setActiveRun(run) {
+  function setActiveRun(run, candidates) {
     state.runId = run.id;
     state.run = run;
-    const llmBit = run.llm && run.llm.count != null ? ` · llm ${run.llm.count}` : "";
-    $("runMeta").textContent = `Run ${run.id} · ${run.status}${llmBit} · ${run.category}`;
-    $("btnDomains").disabled = false;
-    $("btnConflicts").disabled = false;
+    state.candidates = candidates || state.candidates || [];
+    const building = run.building || run.category || "";
+    $("runMeta").textContent = `Session ${run.id} · ${run.status}`;
     const exportBtn = $("btnExport");
     exportBtn.href = `/api/runs/${run.id}/export.csv`;
     exportBtn.classList.remove("disabled");
-    renderDirections(run);
+    renderDirections(run, state.candidates);
+    renderTable();
+    if (building) {
+      // keep form as the user left it
+    }
   }
 
   async function loadRun(runId) {
-    setStatus(`Loading run ${runId}…`);
+    setStatus(`Loading session ${runId}…`);
     const data = await api(`/api/runs/${runId}`);
-    setActiveRun(data.run);
-    state.candidates = data.candidates || [];
-    renderTable();
-    const llm = data.run.llm || {};
-    const err = llm.error ? ` LLM note: ${llm.error}` : "";
-    setStatus(`Loaded ${state.candidates.length} candidates (${state.candidates.filter((c) => c.method === "llm").length} llm). Status: ${data.run.status}.${err}`);
+    setActiveRun(data.run, data.candidates || []);
+    const note = (data.run.llm && data.run.llm.note) || "";
+    setStatus(`Loaded ${state.candidates.length} names.${note ? " " + note : ""}`);
   }
 
   async function refreshRuns() {
     const data = await api("/api/runs");
     const list = $("runList");
-    list.innerHTML = (data.runs || []).map((r) => {
-      const brief = r.brand_brief ? " · brief" : "";
-      return `<li data-id="${r.id}"><strong>${escapeHtml(r.id)}</strong> — ${escapeHtml(r.category)} <span class="hint">(${escapeHtml(r.status)}${brief})</span></li>`;
-    }).join("") || "<li class='hint'>No saved runs yet</li>";
+    list.innerHTML =
+      (data.runs || [])
+        .map((r) => {
+          const label = escapeHtml(r.building || r.category || r.id);
+          return `<li data-id="${r.id}"><strong>${escapeHtml(r.id)}</strong> — ${label} <span class="hint">(${escapeHtml(r.status)})</span></li>`;
+        })
+        .join("") || "<li class='hint'>No saved sessions yet</li>";
   }
 
   $("runForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const payload = {
-      category: fd.get("category"),
-      keywords: String(fd.get("keywords") || ""),
-      tone: fd.get("tone"),
-      brand_brief: String(fd.get("brand_brief") || ""),
+      building: String(fd.get("building") || ""),
+      audience: String(fd.get("audience") || ""),
+      liked_brands: String(fd.get("liked_brands") || ""),
+      avoid: String(fd.get("avoid") || ""),
       max_length: Number(fd.get("max_length")),
       generate_count: Number(fd.get("generate_count")),
       extensions: String(fd.get("extensions") || "")
@@ -248,75 +301,38 @@
         .filter(Boolean),
       domain_check_top: Number(fd.get("domain_check_top")),
       conflict_check_top: Number(fd.get("conflict_check_top")),
+      run_pipeline: true,
     };
 
     try {
       $("btnCreate").disabled = true;
-      setStatus("Creating run…");
-      const created = await api("/api/runs", { method: "POST", body: JSON.stringify(payload) });
-      setActiveRun(created.run);
       const byok = readByok();
-      if (payload.brand_brief && !byok.key) {
-        setStatus("Generating locally (AI skipped — no session key). Add a BYOK key to include LLM names.");
-      } else if (payload.brand_brief && byok.key) {
-        setStatus(`Generating local names + AI names via ${byok.provider} (BYOK)…`);
-      } else {
-        setStatus(`Generating ${payload.generate_count} names (local only)…`);
-      }
-      const gen = await api(`/api/runs/${created.run.id}/generate`, {
+      setStatus(
+        byok.key
+          ? `Generating names, scoring, checking domains & conflicts (AI creativity via ${byok.provider})…`
+          : "Generating names, scoring, checking domains & conflicts…",
+      );
+      const data = await api("/api/runs", {
         method: "POST",
-        body: "{}",
+        body: JSON.stringify(payload),
         headers: llmHeaders(),
       });
-      await loadRun(created.run.id);
+      setActiveRun(data.run, data.candidates || []);
       await refreshRuns();
-      const r = gen.result || {};
+      const r = data.result || {};
+      const domains = r.domains || {};
+      const conflicts = r.conflicts || {};
       setStatus(
-        `Done. Total ${r.generated || 0} (local ${r.local || 0}, llm ${r.llm || 0}), radio-tested ${r.radio_tested || 0}.` +
-          (r.llm_error ? ` LLM: ${r.llm_error}` : ""),
+        `Done — ${r.generated || state.candidates.length} names` +
+          (r.llm ? `, ${r.llm} AI` : "") +
+          `, domains ${domains.checked || 0}, conflicts ${conflicts.checked || 0}.` +
+          (r.llm_note ? ` ${r.llm_note}` : "") +
+          (r.llm_error ? ` AI: ${r.llm_error}` : ""),
       );
     } catch (err) {
       setStatus(`Error: ${err.message}`);
     } finally {
       $("btnCreate").disabled = false;
-    }
-  });
-
-  $("btnDomains").addEventListener("click", async () => {
-    if (!state.runId) return;
-    const top = Number(document.querySelector('[name="domain_check_top"]').value || 50);
-    try {
-      $("btnDomains").disabled = true;
-      setStatus(`Checking domains for top ${top}…`);
-      const result = await api(`/api/runs/${state.runId}/check-domains`, {
-        method: "POST",
-        body: JSON.stringify({ top_n: top, resume: true }),
-      });
-      await loadRun(state.runId);
-      setStatus(`Domain check done. Checked ${result.result.checked}, skipped ${result.result.skipped}.`);
-    } catch (err) {
-      setStatus(`Error: ${err.message}`);
-    } finally {
-      $("btnDomains").disabled = false;
-    }
-  });
-
-  $("btnConflicts").addEventListener("click", async () => {
-    if (!state.runId) return;
-    const top = Number(document.querySelector('[name="conflict_check_top"]').value || 50);
-    try {
-      $("btnConflicts").disabled = true;
-      setStatus(`Conflict-scanning top ${top}…`);
-      await api(`/api/runs/${state.runId}/check-conflicts`, {
-        method: "POST",
-        body: JSON.stringify({ top_n: top }),
-      });
-      await loadRun(state.runId);
-      setStatus("Conflict scan complete (local brand list — not a legal opinion).");
-    } catch (err) {
-      setStatus(`Error: ${err.message}`);
-    } finally {
-      $("btnConflicts").disabled = false;
     }
   });
 
@@ -332,6 +348,7 @@
       });
       const row = state.candidates.find((c) => c.name === name);
       if (row) row.favorite = !currently;
+      renderDirections(state.run, state.candidates);
       renderTable();
     } catch (err) {
       setStatus(`Error: ${err.message}`);
@@ -351,7 +368,7 @@
     });
   });
 
-  ["search", "filterCom", "filterAny", "filterLow", "filterLlm", "filterRadioPass", "filterFav", "minScore", "maxChars"].forEach((id) => {
+  ["search", "filterCom", "filterAny", "filterLow", "filterRadioPass", "filterFav", "minScore"].forEach((id) => {
     $(id).addEventListener("input", renderTable);
     $(id).addEventListener("change", renderTable);
   });
@@ -376,7 +393,7 @@
     else sessionStorage.removeItem(BYOK.model);
     $("llmKey").value = "";
     refreshByokStatus();
-    setStatus(`Saved ${provider} key in sessionStorage for this browser tab. Clear key removes it.`);
+    setStatus("Saved AI key for this browser tab. Clear key removes it.");
   });
 
   $("btnClearKey").addEventListener("click", () => {
@@ -396,13 +413,6 @@
   });
 
   refreshByokStatus();
-
-  api("/api/health")
-    .then((h) => {
-      const mode = h.byok_required === false ? "private (server keys allowed)" : "public BYOK";
-      setStatus(`Ready. Mode: ${mode}. Providers: ${(h.providers || []).join(", ")}.`);
-    })
-    .catch(() => setStatus("Ready."));
-
-  refreshRuns().catch((err) => setStatus(`Error loading runs: ${err.message}`));
+  setStatus("Ready — answer a few questions and hit Generate.");
+  refreshRuns().catch((err) => setStatus(`Error loading sessions: ${err.message}`));
 })();

@@ -4,32 +4,36 @@ Open-source utility that generates pronounceable product and company names, scor
 
 > **Not part of duncombe-web.** This repository is standalone. [seanduncombe.com](https://seanduncombe.com) only links to the deployed app.
 
+## Product experience
+
+Answer a few natural questions (what you’re building, who it’s for, brands you like, what to avoid), then hit **Generate**.
+
+One click runs the full pipeline: invent names → score → radio test → domain checks → conflict scan → results.
+
+Results lead with **naming directions**, then a comparison table focused on “can I use this name?”
+
+Advanced knobs (counts, extensions, BYOK AI) stay collapsed.
+
 ## Features (always free / local)
 
 - Pronounceable local name generation (descriptive, compound, invented, modified stems)
 - Deterministic scoring (weights in `config/scoring.yaml`)
 - Heuristic radio test (pronunciation, alternate spellings, pass/fail)
-- Favorites, filtering, sorting
-- Saved runs (SQLite)
-- CSV export
-- Domain checks via RDAP (no paid registrar required)
+- Deterministic conflict heuristics + RDAP domain checks
+- Favorites, filtering, sorting, saved sessions, CSV export
 
 ## Optional AI (Bring Your Own Key)
 
-Supported providers:
+AI is used only for **creative naming directions and brainstorm names**. Scoring, domains, conflicts, radio, and pronunciation stay code-only.
 
-- OpenAI
-- Anthropic
-- xAI
-- Gemini
+Supported providers: OpenAI, Anthropic, xAI, Gemini.
 
 Security model:
 
 - Keys live in **browser `sessionStorage`** only for the tab session
-- Sent to this app’s server in **`X-LLM-*` headers** for that generate request only (never in the URL)
+- Sent to this app’s server in **`X-LLM-*` headers** for that request only (never in the URL)
 - **Never** written to SQLite, logs, analytics, or source
 - **Clear key** removes the session entry
-- AI stays disabled until the user supplies a key
 - Public deployment has **no** host API keys and `ALLOW_SERVER_LLM_KEYS=false`
 
 ## Quick start

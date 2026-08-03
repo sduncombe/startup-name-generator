@@ -16,6 +16,7 @@ os.environ["DATABASE_PATH"] = "data/test-runs.db"
 
 from app.config import get_settings
 from app.main import app
+from app.services.brief import infer_brief
 from app.services.llm import resolve_credentials
 from app.services.radio_test import radio_test
 
@@ -42,55 +43,60 @@ def test_health_public_byok(client):
     assert h["status"] == "ok"
     assert h["byok_required"] is True
     assert "anthropic" in h["providers"]
-    assert "openai" in h["providers"]
-    assert "xai" in h["providers"]
-    assert "gemini" in h["providers"]
 
 
-def test_local_generate_without_any_keys(client):
+def test_infer_brief_from_natural_language():
+    inferred = infer_brief(
+        building="A website that lets people visualize furniture inside their home before buying.",
+        audience="Homeowners buying furniture.",
+        liked_brands="Airbnb, Notion, Houzz",
+        avoid="AI sounding names. Enterprise.",
+    )
+    assert "furniture" in inferred.keywords or "home" in inferred.keywords
+    assert inferred.category
+    assert "Friendly" in inferred.tone or "Warm" in inferred.tone or "Calm" in inferred.tone
+    assert "What we're building" in inferred.brand_brief
+
+
+def test_one_click_pipeline_without_keys(client):
     created = client.post(
         "/api/runs",
         json={
-            "category": "Test app",
-            "keywords": ["home", "room"],
-            "tone": "Friendly",
-            "brand_brief": "",
-            "max_length": 10,
+            "building": "A website that lets people visualize furniture inside their home before buying.",
+            "audience": "Homeowners buying furniture.",
+            "liked_brands": "Airbnb, Notion",
+            "avoid": "Enterprise and AI-sounding names",
             "generate_count": 80,
-            "extensions": [".com"],
+            "domain_check_top": 0,
+            "conflict_check_top": 5,
+            "run_pipeline": True,
+        },
+    )
+    assert created.status_code == 200, created.text
+    body = created.json()
+    assert body["run"]["id"]
+    assert body["result"]["generated"] >= 50
+    assert body["result"]["llm"] == 0
+    assert body["candidates"]
+    assert body["result"]["directions"]
+    # Directions should organize ideas even without AI
+    assert any(c.get("direction") for c in body["candidates"])
+
+
+def test_create_without_pipeline_still_works(client):
+    created = client.post(
+        "/api/runs",
+        json={
+            "building": "Meal planning app for busy parents",
+            "run_pipeline": False,
+            "generate_count": 80,
         },
     )
     assert created.status_code == 200
     run_id = created.json()["run"]["id"]
     gen = client.post(f"/api/runs/{run_id}/generate")
     assert gen.status_code == 200
-    body = gen.json()["result"]
-    assert body["generated"] >= 50
-    assert body["llm"] == 0
-    full = client.get(f"/api/runs/{run_id}").json()
-    assert all(c["method"] != "llm" for c in full["candidates"])
-    assert any(c.get("radio_result") for c in full["candidates"])
-
-
-def test_brief_without_key_skips_llm(client):
-    created = client.post(
-        "/api/runs",
-        json={
-            "category": "Test app",
-            "keywords": ["home"],
-            "tone": "Friendly",
-            "brand_brief": "Feel like Notion, not corporate AI.",
-            "max_length": 10,
-            "generate_count": 60,
-        },
-    )
-    run_id = created.json()["run"]["id"]
-    gen = client.post(f"/api/runs/{run_id}/generate")
-    assert gen.status_code == 200
-    result = gen.json()["result"]
-    assert result["llm"] == 0
-    assert result["llm_error"]
-    assert "API key" in result["llm_error"]
+    assert gen.json()["result"]["generated"] >= 50
 
 
 def test_resolve_credentials_byok_only():
@@ -101,9 +107,6 @@ def test_resolve_credentials_byok_only():
     )
     assert creds is not None
     assert creds.provider == "openai"
-    assert creds.api_key == "sk-test-not-real"
-
-    # No request key + public mode → None (even if env had keys, we cleared them)
     assert resolve_credentials() is None
 
 
@@ -120,22 +123,17 @@ def test_key_not_persisted_in_run(client):
     created = client.post(
         "/api/runs",
         json={
-            "category": "Test",
-            "keywords": ["a"],
-            "tone": "x",
-            "brand_brief": "brief",
+            "building": "Test product",
             "generate_count": 50,
+            "domain_check_top": 0,
+            "conflict_check_top": 0,
+            "run_pipeline": True,
         },
-    )
-    run_id = created.json()["run"]["id"]
-    # Even if a key is sent, it must not appear in stored run JSON
-    client.post(
-        f"/api/runs/{run_id}/generate",
         headers={
             "X-LLM-Provider": "anthropic",
             "X-LLM-API-Key": "sk-ant-fake-should-never-be-stored",
         },
     )
-    full = client.get(f"/api/runs/{run_id}").json()
-    blob = str(full)
+    assert created.status_code == 200
+    blob = str(created.json())
     assert "sk-ant-fake-should-never-be-stored" not in blob

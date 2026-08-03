@@ -12,7 +12,12 @@ from app import db as dbmod
 from app.config import domains_config, scoring_config
 from app.schemas import ConflictCheckRequest, DomainCheckRequest, FavoriteRequest, RunCreate
 from app.services.llm import LlmError, resolve_credentials
-from app.services.pipeline import check_conflicts_for_run, check_domains_for_run, generate_for_run
+from app.services.pipeline import (
+    check_conflicts_for_run,
+    check_domains_for_run,
+    generate_for_run,
+    run_full_pipeline,
+)
 
 router = APIRouter(prefix="/api/runs", tags=["runs"])
 
@@ -47,6 +52,12 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
         "conflict_check_top": payload.conflict_check_top,
         "radio_test_top": payload.radio_test_top,
         "scoring": scoring_config(),
+        "brief": {
+            "building": payload.building,
+            "audience": payload.audience,
+            "liked_brands": payload.liked_brands,
+            "avoid": payload.avoid,
+        },
     }
     run = await dbmod.create_run(
         db,
@@ -60,7 +71,18 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
         generate_count=payload.generate_count,
         settings=settings,
     )
-    return {"run": _public_run(run)}
+    if not payload.run_pipeline:
+        return {"run": _public_run(run)}
+
+    credentials = _llm_credentials_from_request(request)
+    result = await run_full_pipeline(db, run, llm_credentials=credentials)
+    run = await dbmod.get_run(db, run_id)
+    candidates = await dbmod.list_candidates(db, run_id, include_rejected=False)
+    return {
+        "run": _public_run(run),
+        "result": result,
+        "candidates": [_public_candidate(c) for c in candidates],
+    }
 
 
 @router.get("")
@@ -226,6 +248,7 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
     if not run:
         return None
     settings = run.get("settings") or {}
+    brief = settings.get("brief") or {}
     return {
         "id": run["id"],
         "created_at": run["created_at"],
@@ -233,6 +256,10 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
         "keywords": run["keywords"],
         "tone": run["tone"],
         "brand_brief": run.get("brand_brief") or "",
+        "building": brief.get("building") or run["category"],
+        "audience": brief.get("audience") or "",
+        "liked_brands": brief.get("liked_brands") or "",
+        "avoid": brief.get("avoid") or "",
         "max_length": run["max_length"],
         "extensions": run["extensions"],
         "generate_count": run["generate_count"],
@@ -248,14 +275,19 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
 
 
 def _public_candidate(c: dict[str, Any]) -> dict[str, Any]:
+    scores = c.get("scores") or {}
     return {
         "name": c["name"],
         "pronunciation": c.get("pronunciation", ""),
         "total_score": c.get("total_score", 0),
-        "scores": c.get("scores") or {},
+        "scores": scores,
         "domains": c.get("domains") or {},
         "conflict_level": c.get("conflict_level", "Not checked"),
         "conflict_notes": c.get("conflict_notes", ""),
+        "direction": scores.get("direction") or c.get("direction") or "",
+        "direction_description": scores.get("direction_description")
+        or c.get("direction_description")
+        or "",
         "method": c.get("method", ""),
         "generation_source": c.get("method", ""),
         "radio_score": c.get("radio_score"),

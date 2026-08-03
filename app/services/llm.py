@@ -196,7 +196,10 @@ def _build_prompt(
     count: int,
 ) -> str:
     kw = ", ".join(keywords) if keywords else "(none)"
-    return f"""You are a consumer brand naming strategist.
+    return f"""You are a consumer brand naming strategist helping name a company.
+
+Your only job is creative naming directions and candidate names.
+Do NOT check domains, conflicts, pronunciation, or scores — code handles that.
 
 Return ONLY valid JSON (no markdown fences) with this shape:
 {{
@@ -209,20 +212,22 @@ Return ONLY valid JSON (no markdown fences) with this shape:
 }}
 
 Requirements:
-- Propose 4–7 distinct naming directions grounded in the brand brief.
-- Propose {count} candidate brand names total across those directions.
+- Infer category, keywords, and tone from the brief yourself.
+- Propose 3–5 distinct naming directions grounded in the brief.
+- Propose about {count} candidate brand names total across those directions.
 - Names must be easy to pronounce and spell after hearing once.
 - Prefer 5–{max_length} letters, 2–3 syllables, no numbers/hyphens/punctuation.
 - Suitable in English and French markets.
-- Avoid corporate, enterprise, or AI-tool sounding names unless the brief asks for them.
+- Respect anything listed under Avoid.
 - Avoid obvious major-brand collisions.
 - Do not invent gibberish consonant piles.
 
-Inputs:
-Category: {category}
-Keywords: {kw}
-Tone: {tone}
+Hint fields (may be incomplete — prefer the brief):
+Category hint: {category}
+Keyword hint: {kw}
+Tone hint: {tone}
 Max length: {max_length}
+
 Brand brief:
 {brand_brief.strip()}
 """

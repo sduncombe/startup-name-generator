@@ -8,6 +8,7 @@ import aiosqlite
 
 from app import db as dbmod
 from app.config import domains_config, get_settings
+from app.services.brief import direction_for_method
 from app.services.conflict import check_conflict
 from app.services.domain.factory import get_domain_provider
 from app.services.filter import compact_key, filter_name
@@ -85,7 +86,13 @@ async def generate_for_run(
             "radio_result": "",
         }
 
-    # 2) Optional BYOK LLM generation from brand brief (merged, method=llm)
+    # Tag local candidates with heuristic creative directions (no AI).
+    for row in by_key.values():
+        label, desc = direction_for_method(str(row.get("method") or ""))
+        row["direction"] = label
+        row["direction_description"] = desc
+
+    # 2) Optional BYOK LLM — creative directions + names only
     llm_meta: dict[str, Any] = {
         "enabled": bool(brand_brief),
         "byok": bool(llm_credentials and llm_credentials.api_key),
@@ -96,9 +103,10 @@ async def generate_for_run(
         "model": None,
     }
     if brand_brief and not (llm_credentials and llm_credentials.api_key):
-        llm_meta["error"] = (
-            "AI generation needs your own API key. Choose a provider, paste a key "
-            "(stored only in this browser session), then generate again."
+        # Local path still works; AI creativity is optional.
+        llm_meta["error"] = None
+        llm_meta["note"] = (
+            "AI creative directions skipped — add your own provider key for brainstorming."
         )
     elif want_llm and llm_credentials:
         await dbmod.update_run_status(
@@ -135,6 +143,7 @@ async def generate_for_run(
                     tone=run["tone"],
                 )
                 # LLM names win on collision so the brief is reflected in the table
+                direction = (item.direction or "").strip() or "Creative AI directions"
                 by_key[key] = {
                     "name": item.name,
                     "pronunciation": pronounce_guide(item.name),
@@ -143,7 +152,16 @@ async def generate_for_run(
                     "scores": scored["scores"],
                     "domains": {},
                     "conflict_level": "Not checked",
-                    "conflict_notes": item.why or item.direction or "",
+                    "conflict_notes": item.why or "",
+                    "direction": direction,
+                    "direction_description": next(
+                        (
+                            str(d.get("description") or "")
+                            for d in (llm_result.directions or [])
+                            if str(d.get("name") or "").lower() == direction.lower()
+                        ),
+                        "Names brainstormed from your brief.",
+                    ),
                     "rejected": False,
                     "reject_reason": "",
                     "favorite": False,
@@ -200,16 +218,37 @@ async def generate_for_run(
                 },
             )
 
+    # Build display directions: LLM first, else heuristic buckets from local methods
+    display_directions = list(llm_meta.get("directions") or [])
+    if not display_directions:
+        seen_dirs: dict[str, str] = {}
+        for row in rows:
+            label = str(row.get("direction") or "")
+            if label and label not in seen_dirs:
+                seen_dirs[label] = str(row.get("direction_description") or "")
+        display_directions = [
+            {"name": name, "description": desc} for name, desc in seen_dirs.items()
+        ]
+    llm_meta["directions"] = display_directions
+
+    # Keep direction on scores blob for persistence without a schema migration
+    for row in rows:
+        scores = dict(row.get("scores") or {})
+        scores["direction"] = row.get("direction") or ""
+        scores["direction_description"] = row.get("direction_description") or ""
+        row["scores"] = scores
+
     await dbmod.upsert_candidates(db, run["id"], rows)
 
     # Persist LLM directions on the run settings blob
     run_settings = dict(run.get("settings") or {})
     run_settings["llm"] = {
-        "directions": llm_meta.get("directions") or [],
+        "directions": display_directions,
         "count": llm_meta.get("count") or 0,
         "provider": llm_meta.get("provider"),
         "model": llm_meta.get("model"),
         "error": llm_meta.get("error"),
+        "note": llm_meta.get("note"),
     }
     await dbmod.update_run_settings(db, run["id"], run_settings)
 
@@ -231,8 +270,33 @@ async def generate_for_run(
         "local": len(local),
         "llm": llm_meta.get("count") or 0,
         "llm_error": llm_meta.get("error"),
+        "llm_note": llm_meta.get("note"),
         "directions": llm_meta.get("directions") or [],
         "radio_tested": min(radio_top, len(rows)),
+    }
+
+
+async def run_full_pipeline(
+    db: aiosqlite.Connection,
+    run: dict[str, Any],
+    *,
+    llm_credentials: LlmCredentials | None = None,
+) -> dict[str, Any]:
+    """One-click: generate → score/radio → domains → conflicts."""
+    gen = await generate_for_run(db, run, llm_credentials=llm_credentials)
+    run = await dbmod.get_run(db, run["id"]) or run
+    domains = {"checked": 0, "skipped": 0}
+    conflicts = {"checked": 0}
+    run_settings = run.get("settings") or {}
+    if int(run_settings.get("domain_check_top") or 0) > 0:
+        domains = await check_domains_for_run(db, run)
+        run = await dbmod.get_run(db, run["id"]) or run
+    if int(run_settings.get("conflict_check_top") or 0) > 0:
+        conflicts = await check_conflicts_for_run(db, run)
+    return {
+        **gen,
+        "domains": domains,
+        "conflicts": conflicts,
     }
 
 
