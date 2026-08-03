@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.services.brief import infer_brief
 
@@ -10,8 +10,15 @@ from app.services.brief import infer_brief
 class RunCreate(BaseModel):
     """Consultant-style brief. Advanced generator knobs stay optional."""
 
-    # Primary conversational fields
-    building: str = Field(default="", max_length=2000)
+    model_config = ConfigDict(populate_by_name=True)
+
+    # Primary conversational field: the problem being solved.
+    # "building" remains accepted as a backward-compatible alias.
+    problem: str = Field(
+        default="",
+        max_length=2000,
+        validation_alias=AliasChoices("problem", "building"),
+    )
     audience: str = Field(default="", max_length=1000)
     liked_brands: str = Field(default="", max_length=500)
     avoid: str = Field(default="", max_length=1000)
@@ -64,15 +71,15 @@ class RunCreate(BaseModel):
 
     @model_validator(mode="after")
     def infer_missing_fields(self) -> RunCreate:
-        if not self.building.strip() and not self.category.strip() and not self.brand_brief.strip():
-            raise ValueError("Tell us what you are building")
+        if not self.problem.strip() and not self.category.strip() and not self.brand_brief.strip():
+            raise ValueError("Tell us what problem you are solving")
 
-        building = self.building.strip()
-        if not building and self.brand_brief.strip():
-            building = self.brand_brief.strip().split("\n")[0][:200]
+        problem = self.problem.strip()
+        if not problem and self.brand_brief.strip():
+            problem = self.brand_brief.strip().split("\n")[0][:200]
 
         inferred = infer_brief(
-            building=building or self.category,
+            problem=problem or self.category,
             audience=self.audience,
             liked_brands=self.liked_brands,
             avoid=self.avoid,
@@ -85,8 +92,8 @@ class RunCreate(BaseModel):
         self.tone = inferred.tone
         if not self.brand_brief.strip():
             self.brand_brief = inferred.brand_brief
-        if not self.building.strip():
-            self.building = inferred.building
+        if not self.problem.strip():
+            self.problem = inferred.problem
         return self
 
 

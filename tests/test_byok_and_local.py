@@ -47,22 +47,22 @@ def test_health_public_byok(client):
 
 def test_infer_brief_from_natural_language():
     inferred = infer_brief(
-        building="A website that lets people visualize furniture inside their home before buying.",
+        problem="People can't visualize furniture before buying.",
         audience="Homeowners buying furniture.",
         liked_brands="Airbnb, Notion, Houzz",
         avoid="AI sounding names. Enterprise.",
     )
-    assert "furniture" in inferred.keywords or "home" in inferred.keywords
+    assert "furniture" in inferred.keywords or "home" in inferred.keywords or "visualize" in inferred.keywords
     assert inferred.category
     assert "Friendly" in inferred.tone or "Warm" in inferred.tone or "Calm" in inferred.tone
-    assert "What we're building" in inferred.brand_brief
+    assert "Problem we're solving" in inferred.brand_brief
 
 
 def test_one_click_pipeline_without_keys(client):
     created = client.post(
         "/api/runs",
         json={
-            "building": "A website that lets people visualize furniture inside their home before buying.",
+            "problem": "People can't visualize furniture before buying.",
             "audience": "Homeowners buying furniture.",
             "liked_brands": "Airbnb, Notion",
             "avoid": "Enterprise and AI-sounding names",
@@ -92,7 +92,7 @@ def test_create_without_pipeline_still_works(client):
     created = client.post(
         "/api/runs",
         json={
-            "building": "Meal planning app for busy parents",
+            "problem": "Busy parents struggle to plan meals for the week.",
             "run_pipeline": False,
             "generate_count": 80,
         },
@@ -128,7 +128,7 @@ def test_key_not_persisted_in_run(client):
     created = client.post(
         "/api/runs",
         json={
-            "building": "Test product",
+            "building": "Test product",  # legacy alias still accepted
             "generate_count": 50,
             "domain_check_top": 0,
             "conflict_check_top": 0,

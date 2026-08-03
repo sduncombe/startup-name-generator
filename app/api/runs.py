@@ -62,7 +62,8 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
         "naming_style": payload.naming_style,
         "scoring": scoring_config(),
         "brief": {
-            "building": payload.building,
+            "problem": payload.problem,
+            "building": payload.problem,  # legacy alias for older clients
             "audience": payload.audience,
             "liked_brands": payload.liked_brands,
             "avoid": payload.avoid,
@@ -287,7 +288,8 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
         "keywords": run["keywords"],
         "tone": run["tone"],
         "brand_brief": run.get("brand_brief") or "",
-        "building": brief.get("building") or run["category"],
+        "problem": brief.get("problem") or brief.get("building") or run["category"],
+        "building": brief.get("problem") or brief.get("building") or run["category"],
         "audience": brief.get("audience") or "",
         "liked_brands": brief.get("liked_brands") or "",
         "avoid": brief.get("avoid") or "",

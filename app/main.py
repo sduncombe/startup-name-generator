@@ -54,8 +54,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Startup Name Generator",
-    description="Open-source pronounceable startup names, scoring, RDAP domains, and optional BYOK AI",
+    title="Namegen",
+    description="Open-source brand name generator: pronounceable names, scoring, RDAP domains, trademark screening, and optional BYOK AI",
     version="0.1.0",
     lifespan=lifespan,
 )

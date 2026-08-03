@@ -304,7 +304,7 @@
     list.innerHTML =
       (data.runs || [])
         .map((r) => {
-          const label = escapeHtml(r.building || r.category || r.id);
+          const label = escapeHtml(r.problem || r.building || r.category || r.id);
           return `<li data-id="${r.id}">${label} <span class="hint">· ${escapeHtml(r.status)}</span></li>`;
         })
         .join("") || "<li class='hint'>No previous sessions</li>";
@@ -317,7 +317,7 @@
     const conflictTop = 40;
     const trademarkTop = 40;
     const payload = {
-      building: String(fd.get("building") || ""),
+      problem: String(fd.get("problem") || ""),
       audience: String(fd.get("audience") || ""),
       liked_brands: String(fd.get("liked_brands") || ""),
       avoid: String(fd.get("avoid") || ""),
@@ -378,7 +378,7 @@
       const bits = [`${state.candidates.length} names`];
       if (r.llm) bits.push(`${r.llm} from AI`);
       setIdleMessage(bits.join(" · "));
-      $("building").blur();
+      $("problem").blur();
     } catch (err) {
       setIdleMessage(`Something went wrong: ${err.message}`);
     } finally {
@@ -395,7 +395,7 @@
   document.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      if (!$("btnCreate").disabled && $("building").value.trim()) generate();
+      if (!$("btnCreate").disabled && $("problem").value.trim()) generate();
     }
   });
 

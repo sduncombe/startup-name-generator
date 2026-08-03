@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Startup Name Generator</title>
+  <title>Namegen</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -21,19 +21,20 @@
 
   <main class="app">
     <header class="hero">
-      <h1>Find the perfect name<br /><span class="dim">for your company.</span></h1>
-      <p class="lede">Describe what you’re building. We generate brandable, pronounceable names, score them, and check domains and trademarks.</p>
+      <h1>Find a name<br /><span class="dim">worth building around.</span></h1>
+      <p class="lede">For companies, apps, podcasts, nonprofits, communities, and personal brands. Start with the problem. We generate brandable names and check domains and trademarks.</p>
     </header>
 
     <section class="composer" id="brief">
       <form id="runForm">
         <div class="composer-input">
+          <label class="composer-label" for="problem">What problem are you solving?</label>
           <textarea
-            name="building"
-            id="building"
+            name="problem"
+            id="problem"
             rows="3"
             required
-            placeholder="Describe your company…"
+            placeholder="People can’t visualize furniture before buying."
           ></textarea>
           <div class="composer-bar">
             <div class="composer-left">

@@ -1,6 +1,6 @@
-# Startup Name Generator
+# Namegen
 
-Open-source utility that generates pronounceable product and company names, scores them, runs a heuristic radio (spell-after-hearing) test, checks domains via RDAP, and optionally uses **your own** AI provider key (BYOK).
+Open-source brand name generator for companies, apps, podcasts, nonprofits, communities, and personal brands. It generates pronounceable names, scores them, runs a heuristic radio (spell-after-hearing) test, checks domains via RDAP, screens trademarks, and optionally uses **your own** AI provider key (BYOK).
 
 > **Not part of duncombe-web.** This repository is standalone. [seanduncombe.com](https://seanduncombe.com) only links to the deployed app.
 
@@ -8,7 +8,7 @@ Open-source utility that generates pronounceable product and company names, scor
 
 Designed around effortlessness (Apple HIG *principles*, not Apple’s look): one primary action, progressive disclosure, sensible defaults, and content-first results.
 
-Ask what you’re building → **Generate**. Optional brand preferences and Advanced stay collapsed. The app infers keywords/tone, then runs scoring, radio test, domains, conflicts, and trademark screening with live progress (“Generating names…”, “Checking domains…”, “Screening trademarks…”).
+Ask **What problem are you solving?** → **Generate**. Optional brand preferences and Advanced stay collapsed. The problem statement gives richer naming context than a product description. The app infers keywords/tone, then runs scoring, radio test, domains, conflicts, and trademark screening with live progress.
 
 Naming style defaults to **Brandable**: inventeds, abstracts, evocatives, and light compounds (Stripe / Notion / Slack energy), not SEO-style product phrases. Switch to Balanced or Descriptive under Brand preferences when you want more literal names.
 

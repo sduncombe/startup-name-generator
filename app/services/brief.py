@@ -112,6 +112,29 @@ STOPWORDS = {
     "startup",
     "tool",
     "software",
+    "problem",
+    "problems",
+    "solving",
+    "solve",
+    "solved",
+    "struggle",
+    "struggles",
+    "struggling",
+    "spend",
+    "spends",
+    "spending",
+    "know",
+    "knows",
+    "time",
+    "too",
+    "much",
+    "many",
+    "hard",
+    "difficult",
+    "unable",
+    "cannot",
+    "dont",
+    "doesnt",
 }
 
 TONE_HINTS = {
@@ -134,20 +157,27 @@ class InferredBrief:
     keywords: list[str]
     tone: str
     brand_brief: str
-    building: str
+    problem: str
     audience: str
     liked_brands: str
     avoid: str
 
+    @property
+    def building(self) -> str:
+        """Backward-compatible alias for older call sites."""
+        return self.problem
+
 
 def compose_brand_brief(
     *,
-    building: str,
+    problem: str = "",
+    building: str = "",
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
 ) -> str:
-    parts = [f"What we're building: {building.strip()}"]
+    problem_text = (problem or building).strip()
+    parts = [f"Problem we're solving: {problem_text}"]
     if audience.strip():
         parts.append(f"Who it's for: {audience.strip()}")
     if liked_brands.strip():
@@ -184,7 +214,8 @@ def _unique(items: list[str], *, limit: int = 12) -> list[str]:
 
 def infer_brief(
     *,
-    building: str,
+    problem: str = "",
+    building: str = "",
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
@@ -192,23 +223,23 @@ def infer_brief(
     keywords: list[str] | None = None,
     tone: str | None = None,
 ) -> InferredBrief:
-    building = (building or "").strip()
+    problem = (problem or building or "").strip()
     audience = (audience or "").strip()
     liked_brands = (liked_brands or "").strip()
     avoid = (avoid or "").strip()
 
-    if not building and category:
-        building = category.strip()
+    if not problem and category:
+        problem = category.strip()
 
-    cat = (category or "").strip() or building.split(".")[0].strip()[:120] or "Consumer product"
+    cat = (category or "").strip() or problem.split(".")[0].strip()[:120] or "Brand"
     if len(cat) > 160:
         cat = cat[:157].rstrip() + "…"
 
     kw = list(keywords or [])
     if not kw:
-        kw = _unique(_tokens(building) + _tokens(audience), limit=10)
+        kw = _unique(_tokens(problem) + _tokens(audience), limit=10)
     if not kw:
-        kw = ["brand", "home", "app"]
+        kw = ["brand", "product", "app"]
 
     tone_val = (tone or "").strip()
     if not tone_val:
@@ -224,7 +255,7 @@ def infer_brief(
         tone_val = "; ".join(_unique(tones, limit=3)) or "Friendly, modern, trustworthy"
 
     brief = compose_brand_brief(
-        building=building or cat,
+        problem=problem or cat,
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,
@@ -234,7 +265,7 @@ def infer_brief(
         keywords=kw,
         tone=tone_val,
         brand_brief=brief,
-        building=building or cat,
+        problem=problem or cat,
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,

@@ -141,6 +141,15 @@ body.has-results .app { padding-top: 40px; }
     0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
+.composer-label {
+  display: block;
+  padding: 14px 16px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
 .composer-input textarea {
   display: block;
   width: 100%;
