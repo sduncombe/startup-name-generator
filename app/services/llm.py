@@ -240,8 +240,10 @@ Requirements:
 - Naming style preference: {style}. {style_note}
 - Names must be easy to pronounce and spell after hearing once.
 - Prefer 5–{max_length} letters, 2–3 syllables, no numbers/hyphens/punctuation.
-- Prefer names that work in the Primary market from the brief (Global means broadly international).
-- Respect anything listed under Avoid.
+- Prefer names that work for the Primary language in the brief (pronounceability, spelling, cultural fit).
+- Infer style traits from Brands we like (short, abstract, premium, playful, etc.). Never copy those brand names.
+- Respect Avoid: do not propose names that match those characteristics.
+- Target audience should shape tone and sophistication.
 - Avoid obvious major-brand collisions.
 - Do not invent gibberish consonant piles.
 

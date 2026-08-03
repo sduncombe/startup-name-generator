@@ -71,58 +71,78 @@
             </fieldset>
             <div class="grid-2">
               <div class="field">
-                <span class="label" id="primaryMarketLabel">Primary market</span>
-                <input type="hidden" name="primary_market" id="primaryMarket" value="global" />
-                <div class="market-picker" id="marketPicker">
+                <span class="label" id="primaryLanguageLabel">Primary language</span>
+                <input type="hidden" name="primary_language" id="primaryLanguage" value="en-global" />
+                <div class="market-picker" id="languagePicker">
                   <button
                     type="button"
                     class="market-trigger"
-                    id="marketTrigger"
+                    id="languageTrigger"
                     aria-haspopup="listbox"
                     aria-expanded="false"
-                    aria-labelledby="primaryMarketLabel marketTriggerLabel"
+                    aria-labelledby="primaryLanguageLabel languageTriggerLabel"
                   >
-                    <span class="market-icon" id="marketTriggerIcon" aria-hidden="true"></span>
-                    <span class="market-trigger-text" id="marketTriggerLabel">Global</span>
+                    <span class="market-icon" id="languageTriggerIcon" aria-hidden="true"></span>
+                    <span class="market-trigger-text" id="languageTriggerLabel">English (Global)</span>
                     <svg class="market-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                       <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </button>
-                  <ul class="market-menu" id="marketMenu" role="listbox" aria-labelledby="primaryMarketLabel" hidden>
-                    <li role="option" data-value="global" data-label="Global" aria-selected="true">
+                  <ul class="market-menu" id="languageMenu" role="listbox" aria-labelledby="primaryLanguageLabel" hidden>
+                    <li role="option" data-value="en-global" data-label="English (Global)" data-icon="globe-alt" aria-selected="true">
                       <span class="market-icon" data-icon="globe-alt"></span>
-                      <span>Global</span>
+                      <span>English (Global)</span>
                     </li>
-                    <li role="option" data-value="us" data-label="United States" aria-selected="false">
-                      <span class="market-icon" data-icon="globe-americas"></span>
-                      <span>United States</span>
+                    <li role="option" data-value="en-us" data-label="English (US)" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>English (US)</span>
                     </li>
-                    <li role="option" data-value="ca" data-label="Canada" aria-selected="false">
-                      <span class="market-icon" data-icon="globe-americas"></span>
-                      <span>Canada</span>
+                    <li role="option" data-value="en-uk" data-label="English (UK)" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>English (UK)</span>
                     </li>
-                    <li role="option" data-value="uk" data-label="United Kingdom" aria-selected="false">
-                      <span class="market-icon" data-icon="globe-europe"></span>
-                      <span>United Kingdom</span>
+                    <li role="option" data-value="fr" data-label="French" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>French</span>
                     </li>
-                    <li role="option" data-value="eu" data-label="Europe" aria-selected="false">
-                      <span class="market-icon" data-icon="globe-europe"></span>
-                      <span>Europe</span>
+                    <li role="option" data-value="de" data-label="German" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>German</span>
                     </li>
-                    <li role="option" data-value="au" data-label="Australia" aria-selected="false">
-                      <span class="market-icon" data-icon="globe-asia"></span>
-                      <span>Australia</span>
+                    <li role="option" data-value="es" data-label="Spanish" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>Spanish</span>
                     </li>
-                    <li role="option" data-value="other" data-label="Other" aria-selected="false">
+                    <li role="option" data-value="it" data-label="Italian" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>Italian</span>
+                    </li>
+                    <li role="option" data-value="pt" data-label="Portuguese" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>Portuguese</span>
+                    </li>
+                    <li role="option" data-value="ja" data-label="Japanese" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>Japanese</span>
+                    </li>
+                    <li role="option" data-value="ko" data-label="Korean" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>Korean</span>
+                    </li>
+                    <li role="option" data-value="zh" data-label="Chinese" data-icon="language" aria-selected="false">
+                      <span class="market-icon" data-icon="language"></span>
+                      <span>Chinese</span>
+                    </li>
+                    <li role="option" data-value="other" data-label="Other" data-icon="ellipsis" aria-selected="false">
                       <span class="market-icon" data-icon="ellipsis"></span>
                       <span>Other</span>
                     </li>
                   </ul>
                 </div>
               </div>
-              <label class="field" id="primaryMarketOtherField" hidden>
-                <span class="label">Which market?</span>
-                <input name="primary_market_other" id="primaryMarketOther" type="text" maxlength="120" placeholder="e.g. Brazil, Japan, MENA" />
+              <label class="field" id="primaryLanguageOtherField" hidden>
+                <span class="label">Which language?</span>
+                <input name="primary_language_other" id="primaryLanguageOther" type="text" maxlength="120" placeholder="e.g. Dutch, Arabic, Hindi" />
               </label>
               <label class="field">
                 <span class="label">Target audience</span>

@@ -5,6 +5,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from app.services.preferences import (
+    build_preference_profile,
+    language_display,
+    normalize_language,
+)
+
 STOPWORDS = {
     "a",
     "an",
@@ -151,34 +157,6 @@ TONE_HINTS = {
 }
 
 
-# Optional primary market. Captured now for brief/LLM context; later can drive
-# TLDs, trademark data, spelling, and regional screening.
-MARKET_LABELS = {
-    "global": "Global",
-    "us": "United States",
-    "ca": "Canada",
-    "uk": "United Kingdom",
-    "eu": "Europe",
-    "au": "Australia",
-    "other": "Other",
-}
-
-
-def normalize_market(value: str | None, other: str = "") -> tuple[str, str]:
-    code = (value or "global").strip().lower()
-    if code not in MARKET_LABELS:
-        code = "global"
-    other_text = (other or "").strip() if code == "other" else ""
-    return code, other_text
-
-
-def market_display(code: str, other: str = "") -> str:
-    code, other = normalize_market(code, other)
-    if code == "other" and other:
-        return other
-    return MARKET_LABELS[code]
-
-
 @dataclass
 class InferredBrief:
     category: str
@@ -189,8 +167,9 @@ class InferredBrief:
     audience: str
     liked_brands: str
     avoid: str
-    primary_market: str = "global"
-    primary_market_other: str = ""
+    primary_language: str = "en-global"
+    primary_language_other: str = ""
+    preference_traits: list[str] | None = None
 
     @property
     def building(self) -> str:
@@ -205,20 +184,16 @@ def compose_brand_brief(
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
-    primary_market: str = "global",
-    primary_market_other: str = "",
+    primary_language: str = "en-global",
+    primary_language_other: str = "",
 ) -> str:
     problem_text = (problem or building).strip()
     parts = [f"Problem we're solving: {problem_text}"]
-    market = market_display(primary_market, primary_market_other)
-    if market and market != "Global":
-        parts.append(f"Primary market: {market}")
-    elif market == "Global":
-        parts.append("Primary market: Global")
+    parts.append(f"Primary language: {language_display(primary_language, primary_language_other)}")
     if audience.strip():
         parts.append(f"Target audience: {audience.strip()}")
     if liked_brands.strip():
-        parts.append(f"Brands we like: {liked_brands.strip()}")
+        parts.append(f"Brands we like (style cues only, do not copy): {liked_brands.strip()}")
     if avoid.strip():
         parts.append(f"Avoid: {avoid.strip()}")
     return "\n".join(parts)
@@ -256,8 +231,10 @@ def infer_brief(
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
-    primary_market: str = "global",
-    primary_market_other: str = "",
+    primary_language: str = "en-global",
+    primary_language_other: str = "",
+    primary_market: str | None = None,  # legacy ignored
+    primary_market_other: str | None = None,  # legacy ignored
     category: str | None = None,
     keywords: list[str] | None = None,
     tone: str | None = None,
@@ -266,7 +243,14 @@ def infer_brief(
     audience = (audience or "").strip()
     liked_brands = (liked_brands or "").strip()
     avoid = (avoid or "").strip()
-    market, market_other = normalize_market(primary_market, primary_market_other)
+    lang, lang_other = normalize_language(primary_language, primary_language_other)
+    prefs = build_preference_profile(
+        primary_language=lang,
+        primary_language_other=lang_other,
+        audience=audience,
+        liked_brands=liked_brands,
+        avoid=avoid,
+    )
 
     if not problem and category:
         problem = category.strip()
@@ -288,9 +272,16 @@ def infer_brief(
             hint = TONE_HINTS.get(brand.strip().lower())
             if hint:
                 tones.append(hint)
-        if "premium" in avoid.lower() or "luxury" in liked_brands.lower():
-            tones.append("Approachable, not luxury-coded")
-        if any(x in avoid.lower() for x in ("ai", "enterprise", "corporate")):
+        # Audience / trait-driven tone (materially affects generator pools)
+        if "warm" in prefs.traits or "friendly" in prefs.traits:
+            tones.append("Warm, friendly, approachable")
+        if "premium" in prefs.traits or "sophisticated" in prefs.traits:
+            tones.append("Premium, precise, minimal")
+        if "playful" in prefs.traits:
+            tones.append("Playful, energetic")
+        if "calm" in prefs.traits or "soft" in prefs.traits:
+            tones.append("Calm, soft")
+        if "tech_ai" in prefs.avoid_traits or "enterprise" in prefs.avoid_traits:
             tones.append("Human, consumer-friendly")
         tone_val = "; ".join(_unique(tones, limit=3)) or "Friendly, modern, trustworthy"
 
@@ -299,8 +290,8 @@ def infer_brief(
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,
-        primary_market=market,
-        primary_market_other=market_other,
+        primary_language=lang,
+        primary_language_other=lang_other,
     )
     return InferredBrief(
         category=cat,
@@ -311,8 +302,9 @@ def infer_brief(
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,
-        primary_market=market,
-        primary_market_other=market_other,
+        primary_language=lang,
+        primary_language_other=lang_other,
+        preference_traits=sorted(prefs.traits),
     )
 
 

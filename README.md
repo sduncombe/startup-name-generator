@@ -8,7 +8,7 @@ Open-source brand name generator for companies, apps, podcasts, nonprofits, comm
 
 Designed around effortlessness (Apple HIG *principles*, not Apple’s look): one primary action, progressive disclosure, sensible defaults, and content-first results.
 
-Ask **What problem are you solving?** → **Generate**. Optional brand preferences (naming style, primary market, audience) and Advanced stay collapsed. The problem statement gives richer naming context than a product description. Primary market defaults to Global and is captured for generation context (regional TLDs and trademark data can layer on later). The app infers keywords/tone, then runs scoring, radio test, domains, conflicts, and trademark screening with live progress.
+Ask **What problem are you solving?** → **Generate**. Optional brand preferences (naming style, primary language, audience, liked brands, avoid) and Advanced stay collapsed. Every preference changes generation or scoring: language shapes phonotactics, audience and liked brands shift tone and style traits, and avoid actively penalizes matching names. The app then runs scoring, radio test, domains, conflicts, and trademark screening with live progress.
 
 Naming style defaults to **Brandable**: inventeds, abstracts, evocatives, and light compounds (Stripe / Notion / Slack energy), not SEO-style product phrases. Switch to Balanced or Descriptive under Brand preferences when you want more literal names.
 

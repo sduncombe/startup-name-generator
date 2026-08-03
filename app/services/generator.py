@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from app.config import syllables_config, vocabulary_config
 from app.services.filter import compact_key, filter_name, normalize_name
+from app.services.preferences import PreferenceProfile, build_preference_profile, language_profile
 from app.services.pronunciation import pronounce_guide
 
 # Strategy mix by naming philosophy. Weights are relative.
@@ -76,8 +77,22 @@ class NameGenerator:
         max_length: int,
         count: int,
         naming_style: str = "brandable",
+        preferences: PreferenceProfile | None = None,
+        audience: str = "",
+        liked_brands: str = "",
+        avoid: str = "",
+        primary_language: str = "en-global",
+        primary_language_other: str = "",
     ) -> list[Candidate]:
         style = normalize_naming_style(naming_style)
+        prefs = preferences or build_preference_profile(
+            primary_language=primary_language,
+            primary_language_other=primary_language_other,
+            audience=audience,
+            liked_brands=liked_brands,
+            avoid=avoid,
+        )
+        self._prefs = prefs
         bag: dict[str, Candidate] = {}
 
         strategies = {
@@ -87,10 +102,16 @@ class NameGenerator:
             "evocative": self._evocative,
             "suggestive": self._suggestive,
         }
-        weights = STYLE_WEIGHTS[style]
+        weights = dict(STYLE_WEIGHTS[style])
+        # Liked-brand / audience traits shift the mix (e.g. abstract → more inventeds).
+        for method, mult in (prefs.style_bias or {}).items():
+            if method in weights:
+                weights[method] *= float(mult)
+        total_w = sum(weights.values()) or 1.0
+        weights = {m: w / total_w for m, w in weights.items()}
+
         # Hard quotas so one prolific method cannot dominate the bag.
         quotas = {m: max(1, int(round(count * w))) for m, w in weights.items()}
-        # Keep total close to requested count
         while sum(quotas.values()) > count:
             richest = max(quotas, key=quotas.get)
             if quotas[richest] <= 1:
@@ -100,13 +121,22 @@ class NameGenerator:
             richest = max(weights, key=weights.get)
             quotas[richest] += 1
 
+        # Short-name preference from liked brands / audience
+        eff_max = max_length
+        if "short" in prefs.traits:
+            eff_max = min(max_length, 8)
+
         method_counts = {m: 0 for m in quotas}
 
         def _accept(cand: Candidate) -> bool:
             key = compact_key(cand.name)
             if not key or key in bag:
                 return False
-            result = filter_name(cand.name, max_length=max_length)
+            # Reject names that hit avoid tokens hard during generation
+            avoid_hit = any(tok in key for tok in prefs.avoid_tokens if len(tok) >= 4)
+            if avoid_hit:
+                return False
+            result = filter_name(cand.name, max_length=eff_max)
             if not result.ok:
                 return False
             cand.pronunciation = pronounce_guide(cand.name)
@@ -114,32 +144,65 @@ class NameGenerator:
             method_counts[cand.method] = method_counts.get(cand.method, 0) + 1
             return True
 
-        # Fill each method up to its quota (overgenerate within the method).
         for method, quota in quotas.items():
             attempts = 0
             while method_counts.get(method, 0) < quota and attempts < quota * 8:
                 attempts += 1
                 batch = strategies[method](
-                    category, keywords, tone, max_length, batch=24, style=style
+                    category, keywords, tone, eff_max, batch=24, style=style
                 )
                 for cand in batch:
                     if method_counts.get(method, 0) >= quota:
                         break
                     _accept(cand)
 
-        # Top up shortfalls with brandable-friendly inventeds / evocatives
         fillers = ["invented", "evocative", "compound", "suggestive", "descriptive"]
         guard = 0
         while len(bag) < count and guard < count * 10:
             guard += 1
             method = fillers[guard % len(fillers)]
             for cand in strategies[method](
-                category, keywords, tone, max_length, batch=20, style=style
+                category, keywords, tone, eff_max, batch=20, style=style
             ):
                 if _accept(cand) and len(bag) >= count:
                     break
 
         return list(bag.values())
+
+    def _lang(self) -> dict:
+        prefs = getattr(self, "_prefs", None)
+        if not prefs:
+            return language_profile("en-global")
+        return language_profile(prefs.language)
+
+    def _syllable_parts(self) -> tuple[list[str], list[str], list[str], list[str]]:
+        lang = self._lang()
+        onsets = self._words(self.syllables.get("onsets"))
+        nuclei = self._words(self.syllables.get("nuclei"))
+        codas = self._words(self.syllables.get("codas"))
+        endings = self._words(self.syllables.get("endings"))
+
+        prefer_onsets = self._words(lang.get("onset_prefer"))
+        if prefer_onsets:
+            onsets = [o for o in onsets if o in prefer_onsets] or prefer_onsets
+        prefer_nuclei = self._words(lang.get("nucleus_prefer"))
+        if prefer_nuclei:
+            nuclei = [n for n in nuclei if n in prefer_nuclei] or prefer_nuclei
+        soft = self._words(lang.get("soft_endings"))
+        if soft:
+            # Keep Latin-friendly endings from language profile (+ inventory overlap)
+            endings = soft + [e for e in endings if e in soft or len(e) <= 2]
+            endings = self._words(endings)
+
+        max_cluster = int(lang.get("max_onset_cluster", 2))
+        if max_cluster <= 0:
+            onsets = [o for o in onsets if len(o) == 1] or ["m", "n", "k", "t", "s"]
+        elif max_cluster == 1:
+            onsets = [o for o in onsets if len(o) == 1] or onsets
+
+        if lang.get("forbid_coda"):
+            codas = [""]
+        return onsets, nuclei, codas, endings
 
     @staticmethod
     def _words(values: list | None) -> list[str]:
@@ -204,6 +267,21 @@ class NameGenerator:
                 for w in self._words(words):
                     if w not in lefts:
                         lefts.append(w)
+        # Audience / brand traits nudge evocative vocabulary.
+        prefs = getattr(self, "_prefs", None)
+        traits = prefs.traits if prefs else set()
+        if "warm" in traits or "friendly" in traits:
+            for w in ("warm", "kind", "soft", "calm", "bright"):
+                if w not in lefts:
+                    lefts.append(w)
+        if "premium" in traits or "sophisticated" in traits:
+            for w in ("meridian", "sable", "ivory", "zenith", "atlas"):
+                if w not in roots:
+                    roots.append(w)
+        if "playful" in traits:
+            for w in ("spark", "ripple", "glow", "zest"):
+                if w not in roots:
+                    roots.append(w)
         self.rng.shuffle(roots)
         self.rng.shuffle(lefts)
         self.rng.shuffle(rights)
@@ -289,7 +367,8 @@ class NameGenerator:
     ) -> list[Candidate]:
         """Feeling / imagery blends with no product keywords (Stripe, Slack energy)."""
         abs_pool = self._abstract_pool(tone)
-        endings = self._words(self.syllables.get("endings")) or ["a", "o", "ora", "ly", "en"]
+        _o, _n, _c, endings = self._syllable_parts()
+        endings = endings or ["a", "o", "ora", "ly", "en"]
         out: list[Candidate] = []
         for _ in range(batch):
             mode = self.rng.random()
@@ -331,25 +410,28 @@ class NameGenerator:
         batch: int = 120,
         style: str = "brandable",
     ) -> list[Candidate]:
-        onsets = self.syllables.get("onsets", [])
-        nuclei = self.syllables.get("nuclei", [])
-        codas = self.syllables.get("codas", [])
-        endings = self.syllables.get("endings", [])
+        onsets, nuclei, codas, endings = self._syllable_parts()
+        lang = self._lang()
+        open_bias = float(lang.get("open_syllable_bias", 0.35))
+        patterns = list(self.syllables.get("patterns", ["CV-CV"]))
+        if open_bias >= 0.7:
+            patterns = ["CV-CV", "CV-CV-CV", "V-CV", "CV"]
         out: list[Candidate] = []
         for _ in range(batch):
-            pattern = self.rng.choice(self.syllables.get("patterns", ["CV-CV"]))
+            pattern = self.rng.choice(patterns)
             parts: list[str] = []
             for piece in pattern.split("-"):
-                onset = self.rng.choice(onsets) if piece.startswith("C") else ""
-                nucleus = self.rng.choice(nuclei)
+                onset = self.rng.choice(onsets) if piece.startswith("C") and onsets else ""
+                nucleus = self.rng.choice(nuclei) if nuclei else "a"
                 coda = ""
-                if piece.endswith("C") and len(piece) >= 3:
-                    coda = self.rng.choice([c for c in codas if c])
-                elif "C" in piece[1:]:
-                    coda = self.rng.choice(codas)
+                if not lang.get("forbid_coda") and self.rng.random() > open_bias:
+                    if piece.endswith("C") and len(piece) >= 3:
+                        coda = self.rng.choice([c for c in codas if c] or [""])
+                    elif "C" in piece[1:] and codas:
+                        coda = self.rng.choice(codas)
                 parts.append(f"{onset}{nucleus}{coda}")
-            # Sometimes attach a brand ending
-            if self.rng.random() < 0.45:
+            attach_end = self.rng.random() < (0.55 if lang.get("prefer_vowel_endings") else 0.4)
+            if attach_end and endings:
                 end = self.rng.choice(endings)
                 base = "".join(parts)
                 if not base.endswith(end):
@@ -360,7 +442,16 @@ class NameGenerator:
                 base = "".join(parts)
                 name = base[:1].upper() + base[1:]
             name = normalize_name(name)
-            if not name or len(compact_key(name)) > max_length:
+            key = compact_key(name)
+            if not name or len(key) > max_length:
+                continue
+            # Drop language-awkward clusters early
+            bad = False
+            for cluster in lang.get("avoid_clusters") or ():
+                if cluster and cluster in key:
+                    bad = True
+                    break
+            if bad:
                 continue
             out.append(Candidate(name=name, pronunciation="", method="invented"))
         return out

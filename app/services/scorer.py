@@ -5,6 +5,7 @@ from typing import Any
 
 from app.config import blocklist_config, scoring_config, vocabulary_config
 from app.services.filter import compact_key
+from app.services.preferences import PreferenceProfile, preference_bonus, preference_penalty
 from app.services.pronunciation import consecutive_consonants, syllable_count
 
 
@@ -18,6 +19,7 @@ def score_candidate(
     domains: dict[str, Any] | None = None,
     conflict_level: str = "Not checked",
     naming_style: str = "brandable",
+    preferences: PreferenceProfile | None = None,
 ) -> dict[str, Any]:
     cfg = scoring_config()
     weights = dict(cfg.get("weights", {}) or {})
@@ -87,6 +89,13 @@ def score_candidate(
         if statuses and all(s in {"registered", "premium", "aftermarket"} for s in statuses):
             penalty += float(penalties_cfg.get("unavailable_all_domains", 15))
             notes.append("no preferred domains available")
+
+    if preferences is not None:
+        pref_pen, pref_notes = preference_penalty(name, preferences)
+        penalty += pref_pen
+        notes.extend(pref_notes)
+        pref_bonus, _bonus_notes = preference_bonus(name, preferences)
+        total += pref_bonus
 
     total = max(0.0, min(100.0, total - penalty))
     return {

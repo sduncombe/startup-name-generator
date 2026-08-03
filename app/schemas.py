@@ -4,7 +4,8 @@ from typing import Any, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.services.brief import infer_brief, normalize_market
+from app.services.brief import infer_brief
+from app.services.preferences import normalize_language
 
 
 class RunCreate(BaseModel):
@@ -23,9 +24,17 @@ class RunCreate(BaseModel):
     liked_brands: str = Field(default="", max_length=500)
     avoid: str = Field(default="", max_length=1000)
 
-    # Optional primary market (default Global). Captured for context now.
-    primary_market: str = Field(default="global", max_length=32)
-    primary_market_other: str = Field(default="", max_length=120)
+    # Primary language shapes phonotactics, endings, and scoring.
+    primary_language: str = Field(
+        default="en-global",
+        max_length=32,
+        validation_alias=AliasChoices("primary_language", "primary_market"),
+    )
+    primary_language_other: str = Field(
+        default="",
+        max_length=120,
+        validation_alias=AliasChoices("primary_language_other", "primary_market_other"),
+    )
 
     # Naming philosophy: brandable (default) favors invented/abstract names
     naming_style: Literal["brandable", "balanced", "descriptive"] = "brandable"
@@ -73,10 +82,21 @@ class RunCreate(BaseModel):
             raise ValueError("At least one domain extension is required")
         return out
 
-    @field_validator("primary_market", mode="before")
+    @field_validator("primary_language", mode="before")
     @classmethod
-    def normalize_primary_market(cls, value: Any) -> str:
-        code, _ = normalize_market(str(value or "global"))
+    def normalize_primary_language(cls, value: Any) -> str:
+        # Map legacy market codes if an old client still sends them.
+        legacy = {
+            "global": "en-global",
+            "us": "en-us",
+            "uk": "en-uk",
+            "ca": "en-global",
+            "eu": "en-global",
+            "au": "en-global",
+        }
+        raw = str(value or "en-global").strip().lower()
+        raw = legacy.get(raw, raw)
+        code, _ = normalize_language(raw)
         return code
 
     @model_validator(mode="after")
@@ -88,17 +108,17 @@ class RunCreate(BaseModel):
         if not problem and self.brand_brief.strip():
             problem = self.brand_brief.strip().split("\n")[0][:200]
 
-        market, market_other = normalize_market(self.primary_market, self.primary_market_other)
-        self.primary_market = market
-        self.primary_market_other = market_other
+        lang, lang_other = normalize_language(self.primary_language, self.primary_language_other)
+        self.primary_language = lang
+        self.primary_language_other = lang_other
 
         inferred = infer_brief(
             problem=problem or self.category,
             audience=self.audience,
             liked_brands=self.liked_brands,
             avoid=self.avoid,
-            primary_market=market,
-            primary_market_other=market_other,
+            primary_language=lang,
+            primary_language_other=lang_other,
             category=self.category or None,
             keywords=self.keywords or None,
             tone=self.tone or None,

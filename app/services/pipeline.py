@@ -15,6 +15,7 @@ from app.services.filter import compact_key, filter_name
 from app.services.generator import NameGenerator
 from app.services.llm import LlmCredentials, LlmError, generate_names_from_brief
 from app.services.pronunciation import pronounce_guide
+from app.services.preferences import build_preference_profile
 from app.services.radio_test import radio_test
 from app.services.scorer import score_candidate
 from app.services.trademark_screen import dataset_info, screen_name
@@ -48,6 +49,14 @@ async def generate_for_run(
 
     run_settings = run.get("settings") or {}
     naming_style = str(run_settings.get("naming_style") or "brandable")
+    brief = run_settings.get("brief") or {}
+    prefs = build_preference_profile(
+        primary_language=str(brief.get("primary_language") or "en-global"),
+        primary_language_other=str(brief.get("primary_language_other") or ""),
+        audience=str(brief.get("audience") or ""),
+        liked_brands=str(brief.get("liked_brands") or ""),
+        avoid=str(brief.get("avoid") or ""),
+    )
 
     # 1) Local generation
     generator = NameGenerator()
@@ -58,6 +67,7 @@ async def generate_for_run(
         max_length=max_length,
         count=count,
         naming_style=naming_style,
+        preferences=prefs,
     )
 
     by_key: dict[str, dict[str, Any]] = {}
@@ -72,6 +82,7 @@ async def generate_for_run(
             keywords=run["keywords"],
             tone=run["tone"],
             naming_style=naming_style,
+            preferences=prefs,
         )
         by_key[key] = {
             "name": cand.name,
@@ -149,6 +160,7 @@ async def generate_for_run(
                     keywords=run["keywords"],
                     tone=run["tone"],
                     naming_style=naming_style,
+                    preferences=prefs,
                 )
                 # LLM names win on collision so the brief is reflected in the table
                 direction = (item.direction or "").strip() or "Creative AI directions"
@@ -427,6 +439,8 @@ async def check_domains_for_run(
                     )
                 domains[ext] = result
 
+        rs = run.get("settings") or {}
+        br = rs.get("brief") or {}
         scored = score_candidate(
             candidate["name"],
             method=candidate["method"],
@@ -435,7 +449,14 @@ async def check_domains_for_run(
             tone=run["tone"],
             domains=domains,
             conflict_level=candidate.get("conflict_level", "Not checked"),
-            naming_style=str((run.get("settings") or {}).get("naming_style") or "brandable"),
+            naming_style=str(rs.get("naming_style") or "brandable"),
+            preferences=build_preference_profile(
+                primary_language=str(br.get("primary_language") or "en-global"),
+                primary_language_other=str(br.get("primary_language_other") or ""),
+                audience=str(br.get("audience") or ""),
+                liked_brands=str(br.get("liked_brands") or ""),
+                avoid=str(br.get("avoid") or ""),
+            ),
         )
         _preserve_direction(candidate, scored["scores"])
         await dbmod.update_candidate_domains(
@@ -492,6 +513,8 @@ async def check_conflicts_for_run(
     done = 0
     for c in candidates:
         result = check_conflict(c["name"], category=run["category"])
+        rs = run.get("settings") or {}
+        br = rs.get("brief") or {}
         scored = score_candidate(
             c["name"],
             method=c["method"],
@@ -500,7 +523,14 @@ async def check_conflicts_for_run(
             tone=run["tone"],
             domains=c.get("domains") or {},
             conflict_level=result.level,
-            naming_style=str((run.get("settings") or {}).get("naming_style") or "brandable"),
+            naming_style=str(rs.get("naming_style") or "brandable"),
+            preferences=build_preference_profile(
+                primary_language=str(br.get("primary_language") or "en-global"),
+                primary_language_other=str(br.get("primary_language_other") or ""),
+                audience=str(br.get("audience") or ""),
+                liked_brands=str(br.get("liked_brands") or ""),
+                avoid=str(br.get("avoid") or ""),
+            ),
         )
         _preserve_direction(c, scored["scores"])
         await dbmod.update_candidate_conflict(
