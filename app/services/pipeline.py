@@ -92,7 +92,7 @@ async def generate_for_run(
         row["direction"] = label
         row["direction_description"] = desc
 
-    # 2) Optional BYOK LLM — creative directions + names only
+    # 2) Optional BYOK LLM: creative directions + names only
     llm_meta: dict[str, Any] = {
         "enabled": bool(brand_brief),
         "byok": bool(llm_credentials and llm_credentials.api_key),
@@ -106,7 +106,7 @@ async def generate_for_run(
         # Local path still works; AI creativity is optional.
         llm_meta["error"] = None
         llm_meta["note"] = (
-            "AI creative directions skipped — add your own provider key for brainstorming."
+            "AI creative directions skipped. Add your own provider key for brainstorming."
         )
     elif want_llm and llm_credentials:
         await dbmod.update_run_status(

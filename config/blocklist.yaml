@@ -45,7 +45,7 @@ brand_stems:
   - canva
   - microsoft
   - adobe
-  - nest  # Google Nest / Nest thermostat — flag, don't always reject
+  - nest  # Google Nest / Nest thermostat: flag, don't always reject
   - sofa
   - ashley
   - ethanallen

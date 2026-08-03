@@ -1,5 +1,5 @@
 # DigitalOcean App Platform spec (reference).
-# Deploy from the startup-name-generator repo — NOT duncombe-web.
+# Deploy from the startup-name-generator repo, NOT duncombe-web.
 # Point names.seanduncombe.com at this app after creation (DNS not applied here).
 
 name: startup-name-generator

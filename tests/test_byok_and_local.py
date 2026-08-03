@@ -5,7 +5,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-# Force public BYOK mode for tests — no server LLM keys
+# Force public BYOK mode for tests: no server LLM keys
 os.environ["ALLOW_SERVER_LLM_KEYS"] = "false"
 os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["OPENAI_API_KEY"] = ""

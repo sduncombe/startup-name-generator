@@ -148,7 +148,7 @@ def radio_test(name: str, *, pass_threshold: float = 70.0) -> RadioTestResult:
             reasons[0] if reasons else "Clear sound-to-letter mapping."
         )
     elif passed:
-        explanation = "Likely spelled correctly after one hearing — clear rhythm and limited alternatives."
+        explanation = "Likely spelled correctly after one hearing: clear rhythm and limited alternatives."
     else:
         explanation = "Risky on radio: " + (reasons[0] if reasons else "spelling is ambiguous.")
 

@@ -66,7 +66,7 @@ def resolve_credentials(
     """
     Prefer BYOK from the request. Optionally allow server env keys only when
     ALLOW_SERVER_LLM_KEYS=true (private self-host). Public deployments leave
-    that off and leave env keys empty — no fallback to host credentials.
+    that off and leave env keys empty: no fallback to host credentials.
     """
     settings = get_settings()
     key = (request_api_key or "").strip()
@@ -199,7 +199,7 @@ def _build_prompt(
     return f"""You are a consumer brand naming strategist helping name a company.
 
 Your only job is creative naming directions and candidate names.
-Do NOT check domains, conflicts, pronunciation, or scores — code handles that.
+Do NOT check domains, conflicts, pronunciation, or scores; code handles that.
 
 Return ONLY valid JSON (no markdown fences) with this shape:
 {{
@@ -222,7 +222,7 @@ Requirements:
 - Avoid obvious major-brand collisions.
 - Do not invent gibberish consonant piles.
 
-Hint fields (may be incomplete — prefer the brief):
+Hint fields (may be incomplete; prefer the brief):
 Category hint: {category}
 Keyword hint: {kw}
 Tone hint: {tone}

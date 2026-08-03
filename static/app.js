@@ -33,10 +33,10 @@
     const parts = [];
     for (const ext of order) {
       const st = domainStatus(c, ext);
-      // Skip transient lookup errors — noise, not signal
-      if (st && st !== "error") parts.push({ ext, st });
+      // Skip transient lookup errors (noise, not signal)
+    if (st && st !== "error") parts.push({ ext, st });
     }
-    if (!parts.length) return "—";
+    if (!parts.length) return "-";
     return parts
       .map((p) => `<span class="status-pill ${p.st}">${p.ext} ${p.st}</span>`)
       .join("");
@@ -96,7 +96,7 @@
   }
 
   function radioLabel(c) {
-    if (!c.radio_result) return "—";
+    if (!c.radio_result) return "-";
     const score = c.radio_score == null ? "" : ` ${Number(c.radio_score).toFixed(0)}`;
     return `${c.radio_result}${score}`;
   }
@@ -107,7 +107,7 @@
     if (c.conflict_notes) bits.push(c.conflict_notes);
     const alts = (c.radio_spellings || []).join(", ");
     if (alts) bits.push(`Also: ${alts}`);
-    return bits.join(" · ") || "—";
+    return bits.join(" · ") || "-";
   }
 
   function escapeHtml(str) {
@@ -183,7 +183,7 @@
         <td class="name-cell"><strong>${escapeHtml(c.name)}</strong><div class="pron">${escapeHtml(c.pronunciation || "")}</div></td>
         <td>${Number(c.total_score || 0).toFixed(1)}</td>
         <td><div class="domain-stack">${bestDomainSummary(c)}</div></td>
-        <td class="${conflictClass(c.conflict_level)}">${escapeHtml(c.conflict_level || "—")}</td>
+        <td class="${conflictClass(c.conflict_level)}">${escapeHtml(c.conflict_level || "-")}</td>
         <td class="radio-${c.radio_result || ""}" title="${escapeAttr(c.radio_explanation || "")}">${escapeHtml(radioLabel(c))}</td>
         <td class="notes">${escapeHtml(notesFor(c))}</td>
       </tr>`,
@@ -425,7 +425,7 @@
     loadRun(li.dataset.id);
   });
 
-  // Key autosaves on change/blur — no separate Save control
+  // Key autosaves on change/blur; no separate Save control
   ["llmKey", "llmProvider", "llmModel"].forEach((id) => {
     $(id).addEventListener("change", persistByokFromFields);
     $(id).addEventListener("blur", persistByokFromFields);

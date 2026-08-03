@@ -33,7 +33,7 @@ def consecutive_consonants(name: str) -> int:
 def pronounce_guide(name: str) -> str:
     """
     Lightweight pronunciation hint for the results table.
-    Not IPA — intended as a quick human cue.
+    Not IPA; intended as a quick human cue.
     """
     raw = name.strip()
     if not raw:

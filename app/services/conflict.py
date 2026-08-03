@@ -15,7 +15,7 @@ class ConflictResult:
 def check_conflict(name: str, *, category: str = "") -> ConflictResult:
     """
     Preliminary conflict scan against local brand/block lists.
-    Not a legal trademark opinion — no live web search in V1.
+    Not a legal trademark opinion; no live web search in V1.
     """
     block = blocklist_config()
     key = compact_key(name)
@@ -38,7 +38,7 @@ def check_conflict(name: str, *, category: str = "") -> ConflictResult:
             hits.append(stem)
 
     if hits:
-        # Nest / sofa etc. often appear as stems — treat as possible unless exact brand
+        # Nest / sofa etc. often appear as stems; treat as possible unless exact brand
         major = {"ikea", "wayfair", "houzz", "google", "amazon", "apple", "homesense", "airbnb", "zillow"}
         if any(h in major for h in hits):
             return ConflictResult(

@@ -70,4 +70,4 @@ LICENSE        MIT
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).

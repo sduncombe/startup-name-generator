@@ -1,3 +1,3 @@
-"""Startup Name Generator — internal naming utility."""
+"""Startup Name Generator: naming utility."""
 
 __version__ = "0.1.0"

@@ -59,7 +59,7 @@ def score_candidate(
         penalty += float(penalties_cfg.get("hard_pronunciation", 25)) * 0.4
         notes.append("consonant cluster")
     if re.search(r"(.)\1", key) and method == "invented":
-        # mild — doubles can be fine
+        # mild: doubles can be fine
         pass
     if length > int(length_cfg.get("ideal_max", 10)):
         penalty += float(penalties_cfg.get("long_name", 10))

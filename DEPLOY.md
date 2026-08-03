@@ -1,4 +1,4 @@
-# Deployment — names.seanduncombe.com
+# Deployment: names.seanduncombe.com
 
 This app is **independent** of `duncombe-web`. Deploy it from
 `github.com/sduncombe/startup-name-generator` only.
@@ -20,7 +20,7 @@ This app is **independent** of `duncombe-web`. Deploy it from
 4. Attach a persistent volume at `/data` so SQLite (`DATABASE_PATH=/data/runs.db`) survives deploys.
 5. After the app has a live HTTPS URL, add a custom domain:
    - `names.seanduncombe.com` → the DO app
-   - **Do not change DNS until you are ready** — create the DO domain record first, then add the CNAME/ALIAS in Cloudflare/DNS when instructed.
+   - **Do not change DNS until you are ready.** Create the DO domain record first, then add the CNAME/ALIAS in Cloudflare/DNS when instructed.
 6. seanduncombe.com only **links** to this URL (Launch App). No iframe.
 
 Reference spec: `deploy/digitalocean-app.yaml`.

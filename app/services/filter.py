@@ -65,7 +65,7 @@ def filter_name(name: str, *, max_length: int = 12) -> FilterResult:
         if cluster and cluster in key:
             return FilterResult(False, f"ambiguous cluster: {cluster}")
 
-    # Accidental repeated letters (aaa, bbbb) — allow common doubles like ll, ss, ee
+    # Accidental repeated letters (aaa, bbbb); allow common doubles like ll, ss, ee
     if re.search(r"(.)\1\1", key):
         return FilterResult(False, "accidental repeated letters")
 
