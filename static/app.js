@@ -322,7 +322,6 @@
       liked_brands: String(fd.get("liked_brands") || ""),
       avoid: String(fd.get("avoid") || ""),
       primary_language: String(fd.get("primary_language") || "en-global"),
-      primary_language_other: String(fd.get("primary_language_other") || ""),
       naming_style: String(fd.get("naming_style") || "brandable"),
       max_length: Number(fd.get("max_length")),
       generate_count: Number(fd.get("generate_count")),
@@ -513,13 +512,6 @@
     $("languageMenu").querySelectorAll('[role="option"]').forEach((opt) => {
       opt.setAttribute("aria-selected", opt.dataset.value === value ? "true" : "false");
     });
-    syncLanguageOther();
-  }
-
-  function syncLanguageOther() {
-    const other = $("primaryLanguage").value === "other";
-    $("primaryLanguageOtherField").hidden = !other;
-    if (!other) $("primaryLanguageOther").value = "";
   }
 
   function closeLanguageMenu() {
