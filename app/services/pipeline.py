@@ -377,6 +377,7 @@ async def check_domains_for_run(
             domains=domains,
             conflict_level=candidate.get("conflict_level", "Not checked"),
         )
+        _preserve_direction(candidate, scored["scores"])
         await dbmod.update_candidate_domains(
             db,
             run["id"],
@@ -440,6 +441,7 @@ async def check_conflicts_for_run(
             domains=c.get("domains") or {},
             conflict_level=result.level,
         )
+        _preserve_direction(c, scored["scores"])
         await dbmod.update_candidate_conflict(
             db,
             run["id"],
@@ -458,6 +460,14 @@ async def check_conflicts_for_run(
         {"phase": "conflicts", "target": len(candidates), "done": done},
     )
     return {"checked": done}
+
+
+def _preserve_direction(candidate: dict[str, Any], scores: dict[str, Any]) -> None:
+    """Re-scoring rebuilds the scores blob; keep the direction tags stored in it."""
+    old = candidate.get("scores") or {}
+    for key in ("direction", "direction_description"):
+        if old.get(key) and not scores.get(key):
+            scores[key] = old[key]
 
 
 def _slug(name: str) -> str:

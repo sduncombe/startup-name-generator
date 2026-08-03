@@ -6,40 +6,60 @@
   <title>Startup Name Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;650&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <div class="app">
-    <header class="mast">
-      <h1>Startup Name Generator</h1>
-      <p class="lede">Tell us what you’re building. We’ll invent names and check whether you can use them.</p>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <span class="wordmark"><span class="mark"></span>Namegen</span>
+      <span class="nav-meta">Open source · Local-first · BYOK AI</span>
+    </div>
+  </nav>
+
+  <main class="app">
+    <header class="hero">
+      <h1>Name your company<br /><span class="dim">in one click.</span></h1>
+      <p class="lede">Describe what you’re building. We generate pronounceable names, score them, and check domains and conflicts — instantly.</p>
     </header>
 
-    <section class="brief" id="brief">
+    <section class="composer" id="brief">
       <form id="runForm">
-        <label class="field primary-field">
-          <span class="label">What are you building?</span>
+        <div class="composer-input">
           <textarea
             name="building"
             id="building"
             rows="3"
             required
-            placeholder="A website that lets people visualize furniture inside their home before buying."
+            placeholder="A website that lets people visualize furniture inside their home before buying…"
           ></textarea>
-        </label>
+          <div class="composer-bar">
+            <div class="composer-left">
+              <button type="button" class="chip" data-toggle="moreAbout">Brand details</button>
+              <button type="button" class="chip" data-toggle="advanced">Advanced</button>
+            </div>
+            <button type="submit" id="btnCreate">
+              Generate
+              <kbd>⌘⏎</kbd>
+            </button>
+          </div>
+        </div>
 
-        <details class="disclosure" id="moreAbout">
-          <summary>More about your brand</summary>
-          <div class="disclosure-body">
-            <label class="field">
-              <span class="label">Who is it for?</span>
-              <input name="audience" type="text" placeholder="Homeowners buying furniture" />
-            </label>
-            <label class="field">
-              <span class="label">Brands you like</span>
-              <input name="liked_brands" type="text" placeholder="Airbnb, Notion, Houzz" />
-            </label>
+        <details class="drawer" id="moreAbout">
+          <summary>Brand details</summary>
+          <div class="drawer-body">
+            <div class="grid-2">
+              <label class="field">
+                <span class="label">Who is it for?</span>
+                <input name="audience" type="text" placeholder="Homeowners buying furniture" />
+              </label>
+              <label class="field">
+                <span class="label">Brands you like</span>
+                <input name="liked_brands" type="text" placeholder="Airbnb, Notion, Houzz" />
+              </label>
+            </div>
             <label class="field">
               <span class="label">What to avoid</span>
               <input name="avoid" type="text" placeholder="AI-sounding, enterprise, hard to pronounce" />
@@ -47,10 +67,10 @@
           </div>
         </details>
 
-        <details class="disclosure" id="advanced">
+        <details class="drawer" id="advanced">
           <summary>Advanced</summary>
-          <div class="disclosure-body">
-            <div class="field-row">
+          <div class="drawer-body">
+            <div class="grid-2">
               <label class="field">
                 <span class="label">Max characters</span>
                 <input name="max_length" type="number" min="4" max="20" value="12" />
@@ -66,12 +86,12 @@
             </label>
 
             <div class="ai-block">
-              <p class="ai-title">Optional AI creativity</p>
-              <p class="ai-note">
-                Local naming always runs. Add your own key only if you want extra creative directions.
-                The key stays in this browser tab and is never saved on the server.
-              </p>
-              <div class="field-row">
+              <div class="ai-head">
+                <span class="label">AI creativity <span class="tag">optional</span></span>
+                <span class="ai-status" id="byokStatus">No key</span>
+              </div>
+              <p class="ai-note">Local naming always runs. Add your own key for extra creative directions — it stays in this tab and is never stored on the server.</p>
+              <div class="grid-3">
                 <label class="field">
                   <span class="label">Provider</span>
                   <select id="llmProvider">
@@ -85,22 +105,15 @@
                   <span class="label">Model</span>
                   <input id="llmModel" type="text" placeholder="Default" />
                 </label>
+                <label class="field">
+                  <span class="label">API key</span>
+                  <input id="llmKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" />
+                </label>
               </div>
-              <label class="field">
-                <span class="label">API key</span>
-                <input id="llmKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key — saved for this tab only" />
-              </label>
-              <div class="ai-actions">
-                <button type="button" id="btnClearKey" class="text-btn">Clear key</button>
-                <span class="ai-status" id="byokStatus">No AI key</span>
-              </div>
+              <button type="button" id="btnClearKey" class="text-btn">Clear key</button>
             </div>
           </div>
         </details>
-
-        <div class="primary-action">
-          <button type="submit" id="btnCreate">Generate</button>
-        </div>
       </form>
 
       <div class="progress" id="progress" hidden>
@@ -112,16 +125,17 @@
     <section class="results" id="resultsSection" hidden>
       <div id="directions" class="directions"></div>
 
-      <div class="results-toolbar">
-        <input id="search" type="search" placeholder="Search" aria-label="Search names" />
-        <label class="toggle">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Filter names…" aria-label="Search names" />
+        <label class="switch">
           <input type="checkbox" id="filterUsable" />
-          <span>Usable only</span>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="switch-label">Usable only</span>
         </label>
         <a id="btnExport" class="text-btn" href="#" hidden>Export CSV</a>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-card">
         <table id="results">
           <thead>
             <tr>
@@ -140,11 +154,15 @@
       <p class="count" id="count"></p>
     </section>
 
-    <details class="disclosure history" id="history">
+    <details class="drawer history" id="history">
       <summary>Previous sessions</summary>
       <ul id="runList" class="run-list"></ul>
     </details>
-  </div>
+  </main>
+
+  <footer class="foot">
+    <span>MIT licensed · <a href="https://github.com/sduncombe/startup-name-generator" rel="noopener">View source</a></span>
+  </footer>
 
   <script src="/static/app.js"></script>
 </body>

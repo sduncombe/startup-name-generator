@@ -12,24 +12,16 @@
 
   function setBusy(busy, label = "") {
     const progress = $("progress");
-    const bar = $("progressBar");
     progress.hidden = false;
     progress.dataset.busy = busy ? "true" : "false";
     $("status").textContent = label;
-    if (!busy) {
-      bar.style.width = "100%";
-      bar.style.animation = "none";
-    } else {
-      bar.style.width = "";
-      bar.style.animation = "";
-    }
   }
 
   function setIdleMessage(msg) {
-    $("progress").hidden = !msg;
-    $("progress").dataset.busy = "false";
+    const progress = $("progress");
+    progress.hidden = !msg;
+    progress.dataset.busy = "false";
     $("status").textContent = msg || "";
-    $("progressBar").style.width = msg ? "100%" : "0%";
   }
 
   function domainStatus(c, ext) {
@@ -41,7 +33,8 @@
     const parts = [];
     for (const ext of order) {
       const st = domainStatus(c, ext);
-      if (st) parts.push({ ext, st });
+      // Skip transient lookup errors — noise, not signal
+      if (st && st !== "error") parts.push({ ext, st });
     }
     if (!parts.length) return "—";
     return parts
@@ -156,6 +149,7 @@
     }
 
     const cards = [...byDir.values()]
+      .sort((a, b) => (a.name === "Other ideas") - (b.name === "Other ideas"))
       .map((d) => {
         const top = d.names
           .slice()
@@ -165,7 +159,7 @@
         const items = top
           .map((c) => {
             const com = domainStatus(c, ".com");
-            const hint = com ? `.com ${com}` : `score ${Number(c.total_score || 0).toFixed(0)}`;
+            const hint = com ? `.com ${com}` : `${Number(c.total_score || 0).toFixed(0)}`;
             return `<li><strong>${escapeHtml(c.name)}</strong><span class="mini">${escapeHtml(hint)}</span></li>`;
           })
           .join("");
@@ -227,7 +221,7 @@
     const { provider, key, model } = readByok();
     $("llmProvider").value = provider;
     if (!$("llmKey").value) $("llmModel").value = model;
-    $("byokStatus").textContent = key ? `Key set · ${provider}` : "No AI key";
+    $("byokStatus").textContent = key ? `Key set · ${provider}` : "No key";
   }
 
   function llmHeaders() {
@@ -277,7 +271,7 @@
   }
 
   async function loadRun(runId) {
-    setBusy(true, "Loading previous session…");
+    setBusy(true, "Loading session…");
     try {
       const data = await api(`/api/runs/${runId}`);
       setActiveRun(data.run, data.candidates || []);
@@ -299,10 +293,9 @@
         .join("") || "<li class='hint'>No previous sessions</li>";
   }
 
-  $("runForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  async function generate() {
     persistByokFromFields();
-    const fd = new FormData(e.target);
+    const fd = new FormData($("runForm"));
     const domainTop = 40;
     const conflictTop = 40;
     const payload = {
@@ -365,6 +358,28 @@
     } finally {
       $("btnCreate").disabled = false;
     }
+  }
+
+  $("runForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    generate();
+  });
+
+  // ⌘⏎ / Ctrl+Enter submits from anywhere in the form
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (!$("btnCreate").disabled && $("building").value.trim()) generate();
+    }
+  });
+
+  // Chips toggle the disclosure drawers
+  document.querySelectorAll(".chip[data-toggle]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const drawer = $(chip.dataset.toggle);
+      drawer.open = !drawer.open;
+      chip.classList.toggle("active", drawer.open);
+    });
   });
 
   tbody.addEventListener("click", async (e) => {
@@ -410,7 +425,7 @@
     loadRun(li.dataset.id);
   });
 
-  // Autosave key as the user types/pastes — no separate Save control
+  // Key autosaves on change/blur — no separate Save control
   ["llmKey", "llmProvider", "llmModel"].forEach((id) => {
     $(id).addEventListener("change", persistByokFromFields);
     $(id).addEventListener("blur", persistByokFromFields);
