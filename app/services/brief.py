@@ -179,7 +179,7 @@ def compose_brand_brief(
     problem_text = (problem or building).strip()
     parts = [f"Problem we're solving: {problem_text}"]
     if audience.strip():
-        parts.append(f"Who it's for: {audience.strip()}")
+        parts.append(f"Target audience: {audience.strip()}")
     if liked_brands.strip():
         parts.append(f"Brands we like: {liked_brands.strip()}")
     if avoid.strip():
