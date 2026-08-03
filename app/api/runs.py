@@ -67,6 +67,8 @@ async def create_run(payload: RunCreate, request: Request) -> dict[str, Any]:
             "audience": payload.audience,
             "liked_brands": payload.liked_brands,
             "avoid": payload.avoid,
+            "primary_market": payload.primary_market,
+            "primary_market_other": payload.primary_market_other,
         },
     }
     run = await dbmod.create_run(
@@ -293,6 +295,8 @@ def _public_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
         "audience": brief.get("audience") or "",
         "liked_brands": brief.get("liked_brands") or "",
         "avoid": brief.get("avoid") or "",
+        "primary_market": brief.get("primary_market") or "global",
+        "primary_market_other": brief.get("primary_market_other") or "",
         "naming_style": settings.get("naming_style") or "brandable",
         "max_length": run["max_length"],
         "extensions": run["extensions"],

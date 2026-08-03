@@ -240,7 +240,7 @@ Requirements:
 - Naming style preference: {style}. {style_note}
 - Names must be easy to pronounce and spell after hearing once.
 - Prefer 5–{max_length} letters, 2–3 syllables, no numbers/hyphens/punctuation.
-- Suitable in English and French markets.
+- Prefer names that work in the Primary market from the brief (Global means broadly international).
 - Respect anything listed under Avoid.
 - Avoid obvious major-brand collisions.
 - Do not invent gibberish consonant piles.

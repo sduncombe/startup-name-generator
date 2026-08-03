@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.services.brief import infer_brief
+from app.services.brief import infer_brief, normalize_market
 
 
 class RunCreate(BaseModel):
@@ -22,6 +22,10 @@ class RunCreate(BaseModel):
     audience: str = Field(default="", max_length=1000)
     liked_brands: str = Field(default="", max_length=500)
     avoid: str = Field(default="", max_length=1000)
+
+    # Optional primary market (default Global). Captured for context now.
+    primary_market: str = Field(default="global", max_length=32)
+    primary_market_other: str = Field(default="", max_length=120)
 
     # Naming philosophy: brandable (default) favors invented/abstract names
     naming_style: Literal["brandable", "balanced", "descriptive"] = "brandable"
@@ -69,6 +73,12 @@ class RunCreate(BaseModel):
             raise ValueError("At least one domain extension is required")
         return out
 
+    @field_validator("primary_market", mode="before")
+    @classmethod
+    def normalize_primary_market(cls, value: Any) -> str:
+        code, _ = normalize_market(str(value or "global"))
+        return code
+
     @model_validator(mode="after")
     def infer_missing_fields(self) -> RunCreate:
         if not self.problem.strip() and not self.category.strip() and not self.brand_brief.strip():
@@ -78,11 +88,17 @@ class RunCreate(BaseModel):
         if not problem and self.brand_brief.strip():
             problem = self.brand_brief.strip().split("\n")[0][:200]
 
+        market, market_other = normalize_market(self.primary_market, self.primary_market_other)
+        self.primary_market = market
+        self.primary_market_other = market_other
+
         inferred = infer_brief(
             problem=problem or self.category,
             audience=self.audience,
             liked_brands=self.liked_brands,
             avoid=self.avoid,
+            primary_market=market,
+            primary_market_other=market_other,
             category=self.category or None,
             keywords=self.keywords or None,
             tone=self.tone or None,

@@ -51,11 +51,24 @@ def test_infer_brief_from_natural_language():
         audience="Homeowners buying furniture.",
         liked_brands="Airbnb, Notion, Houzz",
         avoid="AI sounding names. Enterprise.",
+        primary_market="ca",
     )
     assert "furniture" in inferred.keywords or "home" in inferred.keywords or "visualize" in inferred.keywords
     assert inferred.category
     assert "Friendly" in inferred.tone or "Warm" in inferred.tone or "Calm" in inferred.tone
     assert "Problem we're solving" in inferred.brand_brief
+    assert "Primary market: Canada" in inferred.brand_brief
+    assert inferred.primary_market == "ca"
+
+
+def test_primary_market_defaults_to_global_and_accepts_other():
+    from app.services.brief import market_display, normalize_market
+
+    assert normalize_market(None) == ("global", "")
+    assert market_display("uk") == "United Kingdom"
+    code, other = normalize_market("other", "Japan")
+    assert code == "other" and other == "Japan"
+    assert market_display("other", "Japan") == "Japan"
 
 
 def test_one_click_pipeline_without_keys(client):

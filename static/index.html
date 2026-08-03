@@ -71,6 +71,22 @@
             </fieldset>
             <div class="grid-2">
               <label class="field">
+                <span class="label">Primary market</span>
+                <select name="primary_market" id="primaryMarket">
+                  <option value="global" selected>🌍 Global</option>
+                  <option value="us">🇺🇸 United States</option>
+                  <option value="ca">🇨🇦 Canada</option>
+                  <option value="uk">🇬🇧 United Kingdom</option>
+                  <option value="eu">🇪🇺 Europe</option>
+                  <option value="au">🇦🇺 Australia</option>
+                  <option value="other">Other…</option>
+                </select>
+              </label>
+              <label class="field" id="primaryMarketOtherField" hidden>
+                <span class="label">Which market?</span>
+                <input name="primary_market_other" id="primaryMarketOther" type="text" maxlength="120" placeholder="e.g. Brazil, Japan, MENA" />
+              </label>
+              <label class="field">
                 <span class="label">Target audience</span>
                 <input name="audience" type="text" placeholder="Homeowners buying furniture" />
               </label>

@@ -321,6 +321,8 @@
       audience: String(fd.get("audience") || ""),
       liked_brands: String(fd.get("liked_brands") || ""),
       avoid: String(fd.get("avoid") || ""),
+      primary_market: String(fd.get("primary_market") || "global"),
+      primary_market_other: String(fd.get("primary_market_other") || ""),
       naming_style: String(fd.get("naming_style") || "brandable"),
       max_length: Number(fd.get("max_length")),
       generate_count: Number(fd.get("generate_count")),
@@ -486,6 +488,14 @@
       }
     } catch (_) { /* non-critical */ }
   }
+
+  function syncPrimaryMarketOther() {
+    const other = $("primaryMarket").value === "other";
+    $("primaryMarketOtherField").hidden = !other;
+    if (!other) $("primaryMarketOther").value = "";
+  }
+  $("primaryMarket").addEventListener("change", syncPrimaryMarketOther);
+  syncPrimaryMarketOther();
 
   refreshByokStatus();
   $("progress").hidden = true;

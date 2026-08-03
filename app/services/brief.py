@@ -151,6 +151,34 @@ TONE_HINTS = {
 }
 
 
+# Optional primary market. Captured now for brief/LLM context; later can drive
+# TLDs, trademark data, spelling, and regional screening.
+MARKET_LABELS = {
+    "global": "Global",
+    "us": "United States",
+    "ca": "Canada",
+    "uk": "United Kingdom",
+    "eu": "Europe",
+    "au": "Australia",
+    "other": "Other",
+}
+
+
+def normalize_market(value: str | None, other: str = "") -> tuple[str, str]:
+    code = (value or "global").strip().lower()
+    if code not in MARKET_LABELS:
+        code = "global"
+    other_text = (other or "").strip() if code == "other" else ""
+    return code, other_text
+
+
+def market_display(code: str, other: str = "") -> str:
+    code, other = normalize_market(code, other)
+    if code == "other" and other:
+        return other
+    return MARKET_LABELS[code]
+
+
 @dataclass
 class InferredBrief:
     category: str
@@ -161,6 +189,8 @@ class InferredBrief:
     audience: str
     liked_brands: str
     avoid: str
+    primary_market: str = "global"
+    primary_market_other: str = ""
 
     @property
     def building(self) -> str:
@@ -175,9 +205,16 @@ def compose_brand_brief(
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
+    primary_market: str = "global",
+    primary_market_other: str = "",
 ) -> str:
     problem_text = (problem or building).strip()
     parts = [f"Problem we're solving: {problem_text}"]
+    market = market_display(primary_market, primary_market_other)
+    if market and market != "Global":
+        parts.append(f"Primary market: {market}")
+    elif market == "Global":
+        parts.append("Primary market: Global")
     if audience.strip():
         parts.append(f"Target audience: {audience.strip()}")
     if liked_brands.strip():
@@ -219,6 +256,8 @@ def infer_brief(
     audience: str = "",
     liked_brands: str = "",
     avoid: str = "",
+    primary_market: str = "global",
+    primary_market_other: str = "",
     category: str | None = None,
     keywords: list[str] | None = None,
     tone: str | None = None,
@@ -227,6 +266,7 @@ def infer_brief(
     audience = (audience or "").strip()
     liked_brands = (liked_brands or "").strip()
     avoid = (avoid or "").strip()
+    market, market_other = normalize_market(primary_market, primary_market_other)
 
     if not problem and category:
         problem = category.strip()
@@ -259,6 +299,8 @@ def infer_brief(
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,
+        primary_market=market,
+        primary_market_other=market_other,
     )
     return InferredBrief(
         category=cat,
@@ -269,6 +311,8 @@ def infer_brief(
         audience=audience,
         liked_brands=liked_brands,
         avoid=avoid,
+        primary_market=market,
+        primary_market_other=market_other,
     )
 
 
