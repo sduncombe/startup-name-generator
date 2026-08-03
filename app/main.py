@@ -23,7 +23,7 @@ STATIC_DIR = ROOT / "static"
 class BasicRateLimitMiddleware(BaseHTTPMiddleware):
     """Very light in-process rate limit for local/internal use."""
 
-    def __init__(self, app, max_per_minute: int = 120) -> None:
+    def __init__(self, app, max_per_minute: int = 300) -> None:
         super().__init__(app)
         self.max_per_minute = max_per_minute
         self._hits: dict[str, list[float]] = {}
