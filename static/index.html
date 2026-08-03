@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Startup Name Generator</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Startup Name Generator</h1>
+      <p class="sub">Open-source naming utility — local generation, radio test, optional BYOK AI</p>
+    </div>
+    <div class="run-meta" id="runMeta">No active run</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel form-panel">
+      <h2>New run</h2>
+      <form id="runForm">
+        <label>Category
+          <input name="category" required value="Furniture visualization app" />
+        </label>
+        <label>Keywords <span class="hint">(comma-separated)</span>
+          <input name="keywords" value="room, place, fit, home, preview, buy, try" />
+        </label>
+        <label>Brand tone
+          <input name="tone" value="Friendly, modern, trustworthy" />
+        </label>
+        <label>Brand brief <span class="hint">(optional — unlocks AI naming when you provide a key)</span>
+          <textarea name="brand_brief" rows="5" placeholder="Describe the brand feel, references, audience, and what to avoid…"></textarea>
+        </label>
+        <div class="row">
+          <label>Max length
+            <input name="max_length" type="number" min="4" max="20" value="12" />
+          </label>
+          <label>Generate count
+            <input name="generate_count" type="number" min="50" max="10000" value="400" />
+          </label>
+        </div>
+        <label>Domain extensions
+          <input name="extensions" value=".com, .app, .co" />
+        </label>
+        <div class="row">
+          <label>Domain-check top N
+            <input name="domain_check_top" type="number" min="0" max="2000" value="50" />
+          </label>
+          <label>Conflict-check top N
+            <input name="conflict_check_top" type="number" min="0" max="500" value="50" />
+          </label>
+        </div>
+
+        <fieldset class="byok">
+          <legend>Optional AI (Bring Your Own Key)</legend>
+          <p class="byok-note">
+            AI features stay off until you paste a key. Your key is kept in
+            <strong>browser sessionStorage only</strong> for this tab session.
+            When you generate with a brand brief, the key is sent once to
+            <em>this app’s server</em> (via request headers, never in the URL)
+            solely to call the selected provider, then discarded — it is
+            <strong>never</strong> written to the database, logs, or source code.
+          </p>
+          <label>Provider
+            <select id="llmProvider" name="llm_provider">
+              <option value="anthropic">Anthropic</option>
+              <option value="openai">OpenAI</option>
+              <option value="xai">xAI</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </label>
+          <label>API key
+            <input id="llmKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-… / key…" />
+          </label>
+          <label>Model <span class="hint">(optional override)</span>
+            <input id="llmModel" type="text" placeholder="provider default" />
+          </label>
+          <div class="actions">
+            <button type="button" id="btnSaveKey" class="ghost">Save key for this session</button>
+            <button type="button" id="btnClearKey" class="ghost">Clear key</button>
+          </div>
+          <p class="byok-status" id="byokStatus">AI key: not set</p>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" id="btnCreate">Create &amp; generate</button>
+          <button type="button" id="btnDomains" disabled>Check domains</button>
+          <button type="button" id="btnConflicts" disabled>Check conflicts</button>
+          <a id="btnExport" class="button ghost disabled" href="#">Export CSV</a>
+        </div>
+      </form>
+
+      <div class="status" id="status">Ready.</div>
+      <div class="llm-box" id="llmBox" hidden>
+        <h3>LLM naming directions</h3>
+        <ul id="llmDirections"></ul>
+      </div>
+
+      <h2>Previous runs</h2>
+      <ul id="runList" class="run-list"></ul>
+    </section>
+
+    <section class="panel results-panel">
+      <div class="filters">
+        <input id="search" type="search" placeholder="Search names…" />
+        <label><input type="checkbox" id="filterCom" /> .com available</label>
+        <label><input type="checkbox" id="filterAny" /> Any domain available</label>
+        <label><input type="checkbox" id="filterLow" /> Low conflict only</label>
+        <label><input type="checkbox" id="filterLlm" /> LLM only</label>
+        <label><input type="checkbox" id="filterRadioPass" /> Radio pass only</label>
+        <label><input type="checkbox" id="filterFav" /> Favorites only</label>
+        <label>Min score
+          <input id="minScore" type="number" min="0" max="100" value="0" />
+        </label>
+        <label>Max chars
+          <input id="maxChars" type="number" min="4" max="20" value="12" />
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table id="results">
+          <thead>
+            <tr>
+              <th data-sort="favorite">★</th>
+              <th data-sort="name">Name</th>
+              <th data-sort="pronunciation">Pronunciation</th>
+              <th data-sort="total_score">Score</th>
+              <th data-sort="method">Generation source</th>
+              <th data-sort="radio_score">Radio score</th>
+              <th data-sort="radio_result">Radio-test result</th>
+              <th data-sort="radio_spellings">Likely alternate spellings</th>
+              <th data-sort="com">.com</th>
+              <th data-sort="app">.app</th>
+              <th data-sort="co">.co</th>
+              <th data-sort="conflict_level">Conflict</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="count" id="count"></p>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

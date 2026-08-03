@@ -1,0 +1,97 @@
+# Controlled syllable inventory for invented names (CV / CVC style).
+# Keep these easy to say in English and French.
+
+onsets:
+  - b
+  - br
+  - c
+  - cl
+  - d
+  - f
+  - fl
+  - g
+  - h
+  - k
+  - l
+  - m
+  - n
+  - p
+  - pl
+  - r
+  - s
+  - st
+  - t
+  - tr
+  - v
+  - w
+  - z
+
+nuclei:
+  - a
+  - e
+  - i
+  - o
+  - u
+  - ai
+  - ee
+  - oo
+  - or
+  - ar
+
+codas:
+  - ""
+  - n
+  - m
+  - l
+  - r
+  - s
+  - t
+  - d
+  - k
+
+# Preferred ending syllables that sound brand-like
+endings:
+  - a
+  - o
+  - or
+  - ora
+  - ivo
+  - ivo
+  - lyn
+  - wise
+  - fit
+  - view
+  - proof
+  - sure
+  - nest
+  - place
+  - home
+  - room
+  - live
+  - look
+
+patterns:
+  - CV-CV
+  - CVC-CV
+  - CV-CVC
+  - CVC-CVC
+
+ambiguous_clusters:
+  - xq
+  - qv
+  - qz
+  - zx
+  - gx
+  - cx
+  - pq
+  - nstl
+  - rnx
+  - xq
+  - yy
+  - uu
+  - iii
+  - aaa
+  - ooo
+  - eee
+
+max_consecutive_consonants: 3

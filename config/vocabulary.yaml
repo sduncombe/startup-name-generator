@@ -1,0 +1,155 @@
+nouns:
+  - home
+  - room
+  - space
+  - place
+  - nest
+  - house
+  - loft
+  - den
+  - nook
+  - suite
+  - studio
+  - living
+  - dwell
+  - habitat
+  - interior
+  - furniture
+  - sofa
+  - chair
+  - table
+  - design
+  - style
+  - look
+  - view
+  - preview
+  - scene
+  - layout
+  - plan
+  - match
+  - fit
+  - proof
+
+verbs:
+  - see
+  - try
+  - buy
+  - fit
+  - place
+  - preview
+  - view
+  - look
+  - live
+  - dwell
+  - match
+  - check
+  - find
+  - show
+  - make
+  - set
+  - move
+  - shape
+
+benefits:
+  - easy
+  - sure
+  - right
+  - smart
+  - clear
+  - true
+  - simple
+  - ready
+  - first
+  - next
+  - better
+  - bright
+  - calm
+  - cozy
+  - open
+  - fresh
+
+modifiers:
+  - wise
+  - proof
+  - fit
+  - first
+  - view
+  - look
+  - ly
+  - ora
+  - ivo
+  - a
+  - o
+  - nest
+  - place
+  - home
+  - room
+
+tone_words:
+  friendly:
+    - cozy
+    - warm
+    - easy
+    - bright
+    - happy
+    - soft
+  modern:
+    - clear
+    - smart
+    - open
+    - clean
+    - sleek
+    - fresh
+  trustworthy:
+    - sure
+    - "true"
+    - proof
+    - right
+    - solid
+    - steady
+
+category_stems:
+  furniture:
+    - furn
+    - furni
+    - habit
+    - room
+    - deco
+    - home
+    - place
+    - nest
+    - liv
+    - dwell
+    - space
+    - view
+    - fit
+  visualization:
+    - view
+    - look
+    - see
+    - visu
+    - scene
+    - preview
+    - show
+  consumer:
+    - try
+    - buy
+    - live
+    - easy
+    - home
+    - place
+
+# Phrase templates for descriptive combinations (tokens replaced by vocab)
+phrase_templates:
+  - "{verb} it {noun}"
+  - "{noun} {verb}"
+  - "{verb} {noun}"
+  - "{noun} check"
+  - "{noun} {benefit}"
+  - "{verb} it here"
+  - "{noun} {modifier}"
+  - "fits {noun}"
+  - "see it {noun}"
+  - "try it {noun}"
+  - "place it {noun}"
+  - "{benefit} {noun}"

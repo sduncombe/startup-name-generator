@@ -1,0 +1,55 @@
+# Deployment — names.seanduncombe.com
+
+This app is **independent** of `duncombe-web`. Deploy it from
+`github.com/sduncombe/startup-name-generator` only.
+
+## Public security rules
+
+| Rule | Public value |
+|---|---|
+| `ALLOW_SERVER_LLM_KEYS` | `false` |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `XAI_API_KEY` / `GEMINI_API_KEY` | **unset** |
+| `DOMAIN_API_KEY` / `DOMAIN_API_SECRET` | **unset** (use RDAP) |
+| AI | BYOK only (browser sessionStorage → ephemeral header) |
+
+## DigitalOcean App Platform (recommended)
+
+1. Create a new App from the `startup-name-generator` GitHub repo.
+2. Use the `Dockerfile` (port `8000`).
+3. Set env vars from `.env.example` public section. Confirm paid keys are empty.
+4. Attach a persistent volume at `/data` so SQLite (`DATABASE_PATH=/data/runs.db`) survives deploys.
+5. After the app has a live HTTPS URL, add a custom domain:
+   - `names.seanduncombe.com` → the DO app
+   - **Do not change DNS until you are ready** — create the DO domain record first, then add the CNAME/ALIAS in Cloudflare/DNS when instructed.
+6. seanduncombe.com only **links** to this URL (Launch App). No iframe.
+
+Reference spec: `deploy/digitalocean-app.yaml`.
+
+## Docker (any host)
+
+```bash
+docker build -t startup-name-generator .
+docker run --rm -p 8000:8000 \
+  -e ALLOW_SERVER_LLM_KEYS=false \
+  -e PUBLIC_APP_URL=https://names.seanduncombe.com \
+  -v sn-data:/data \
+  startup-name-generator
+```
+
+## Private self-host (optional)
+
+If you run a private instance and want server-side keys:
+
+```env
+ALLOW_SERVER_LLM_KEYS=true
+ANTHROPIC_API_KEY=...
+```
+
+Never enable this on the public `names.seanduncombe.com` deployment.
+
+## Website integration
+
+`duncombe-web` lists the tool under **Apps** with:
+
+- Launch App → `https://names.seanduncombe.com`
+- View Source → `https://github.com/sduncombe/startup-name-generator`

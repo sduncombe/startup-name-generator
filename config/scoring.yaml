@@ -1,0 +1,28 @@
+weights:
+  pronounceability: 25
+  spelling_clarity: 20
+  memorability: 15
+  length: 10
+  category_relevance: 10
+  brand_flexibility: 10
+  domain_availability: 10
+
+penalties:
+  existing_company_match: 40
+  existing_app_match: 30
+  major_trademark_similarity: 35
+  hard_pronunciation: 25
+  difficult_spelling: 20
+  long_name: 10
+  unavailable_all_domains: 15
+  blocklist_hit: 45
+
+length:
+  ideal_min: 5
+  ideal_max: 10
+  hard_max: 12
+
+syllables:
+  ideal_min: 2
+  ideal_max: 3
+  hard_max: 3

@@ -1,0 +1,66 @@
+# Major brands / confusing terms. Hits heavily penalize or flag conflict;
+# they do not always hard-reject (except exact brand matches).
+
+exact_reject:
+  - ikea
+  - wayfair
+  - houzz
+  - google
+  - amazon
+  - apple
+  - pinterest
+  - homesense
+  - airbnb
+  - zillow
+  - figma
+  - canva
+  - facebook
+  - meta
+  - microsoft
+  - adobe
+  - sherwin
+  - potterybarn
+  - westelm
+  - crateandbarrel
+  - cb2
+  - restorationhardware
+  - articlemobile
+  - article
+  - parlour
+  - ambient
+
+# Substrings that flag high/possible conflict when present as a whole word or stem
+brand_stems:
+  - ikea
+  - wayfair
+  - houzz
+  - google
+  - amazon
+  - apple
+  - pinterest
+  - homesense
+  - airbnb
+  - zillow
+  - figma
+  - canva
+  - microsoft
+  - adobe
+  - nest  # Google Nest / Nest thermostat — flag, don't always reject
+  - sofa
+  - ashley
+  - ethanallen
+  - roomstogo
+  - overstock
+  - etsy
+
+confusing_terms:
+  - xxx
+  - test
+  - "null"
+  - admin
+  - fuck
+  - shit
+  - porn
+  - sex
+  - nazi
+  - hell

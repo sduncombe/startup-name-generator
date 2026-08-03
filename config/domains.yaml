@@ -1,0 +1,15 @@
+default_extensions:
+  - .com
+  - .app
+  - .co
+
+cache_ttl_hours: 168
+
+# RDAP bootstrap endpoints (fallback if IANA lookup fails)
+rdap_servers:
+  com: https://rdap.verisign.com/com/v1
+  app: https://rdap.nic.google
+  co: https://rdap.nic.co
+  net: https://rdap.verisign.com/net/v1
+  org: https://rdap.publicinterestregistry.org/rdap
+  io: https://rdap.nic.io
