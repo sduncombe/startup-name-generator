@@ -489,13 +489,93 @@
     } catch (_) { /* non-critical */ }
   }
 
+  // Heroicons v2 outline (MIT) — https://heroicons.com
+  const MARKET_ICONS = {
+    "globe-alt":
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg>',
+    "globe-americas":
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m6.115 5.19.319 1.913A6 6 0 0 0 8.11 10.36L9.75 12l-.387.775c-.217.433-.132.956.21 1.298l1.348 1.348c.21.21.329.497.329.795v1.089c0 .426.24.815.622 1.006l.153.076c.433.217.956.132 1.298-.21l.723-.723a8.7 8.7 0 0 0 2.288-4.042 1.087 1.087 0 0 0-.358-1.099l-1.33-1.108c-.251-.21-.582-.299-.905-.245l-1.17.195a1.125 1.125 0 0 1-.98-.314l-.295-.295a1.125 1.125 0 0 1 0-1.591l.13-.132a1.125 1.125 0 0 1 1.3-.21l.603.302a.809.809 0 0 0 1.086-1.086L14.25 7.5l1.256-.837a4.5 4.5 0 0 0 1.528-1.732l.146-.292M6.115 5.19A9 9 0 1 0 17.18 4.64M6.115 5.19A8.965 8.965 0 0 1 12 3c1.929 0 3.716.607 5.18 1.64"/></svg>',
+    "globe-europe":
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m20.893 13.393-1.135-1.135a2.252 2.252 0 0 1-.421-.585l-1.08-2.16a.414.414 0 0 0-.663-.107.827.827 0 0 1-.812.21l-1.273-.363a.89.89 0 0 0-.738 1.595l.587.39c.59.395.674 1.23.172 1.732l-.2.2c-.212.212-.33.498-.33.796v.41c0 .409-.11.809-.32 1.158l-1.315 2.191a2.11 2.11 0 0 1-1.81 1.025 1.055 1.055 0 0 1-1.055-1.055v-1.172c0-.92-.56-1.747-1.414-2.089l-.655-.261a2.25 2.25 0 0 1-1.383-2.46l.007-.042a2.25 2.25 0 0 1 .29-.787l.09-.15a2.25 2.25 0 0 1 2.37-1.048l1.178.236a1.125 1.125 0 0 0 1.302-.795l.208-.73a1.125 1.125 0 0 0-.578-1.315l-.665-.332-.091.091a2.25 2.25 0 0 1-1.591.659h-.18c-.249 0-.487.1-.662.274a.931.931 0 0 1-1.458-1.137l1.411-2.353a2.25 2.25 0 0 0 .286-.76m11.928 9.869A9 9 0 0 0 8.965 3.525m11.928 9.868A9 9 0 1 1 8.965 3.525"/></svg>',
+    "globe-asia":
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12.75 3.03v.568c0 .334.148.65.405.864l1.068.89c.442.369.535 1.01.216 1.49l-.51.766a2.25 2.25 0 0 1-1.161.886l-.143.048a1.107 1.107 0 0 0-.57 1.664c.369.555.169 1.307-.427 1.605L9 13.125l.423 1.059a.956.956 0 0 1-1.652.928l-.679-.906a1.125 1.125 0 0 0-1.906.172L4.5 15.75l-.612.153M12.75 3.031a9 9 0 0 0-8.862 12.872M12.75 3.031a9 9 0 0 1 6.69 14.036m0 0-.177-.529A2.25 2.25 0 0 0 17.128 15H16.5l-.324-.324a1.453 1.453 0 0 0-2.328.377l-.036.073a1.586 1.586 0 0 1-.982.816l-.99.282c-.55.157-.894.702-.8 1.267l.073.438c.08.474.49.821.97.821.846 0 1.598.542 1.865 1.345l.215.643m5.276-3.67a9.012 9.012 0 0 1-5.276 3.67m0 0a9 9 0 0 1-10.275-4.835M15.75 9c0 .896-.393 1.7-1.016 2.25"/></svg>',
+    "ellipsis":
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>',
+  };
+
+  const MARKET_ICON_FOR_VALUE = {
+    global: "globe-alt",
+    us: "globe-americas",
+    ca: "globe-americas",
+    uk: "globe-europe",
+    eu: "globe-europe",
+    au: "globe-asia",
+    other: "ellipsis",
+  };
+
+  function paintMarketIcons() {
+    document.querySelectorAll(".market-icon[data-icon]").forEach((el) => {
+      const key = el.dataset.icon;
+      el.innerHTML = MARKET_ICONS[key] || MARKET_ICONS["globe-alt"];
+    });
+  }
+
+  function setMarketValue(value, label) {
+    const input = $("primaryMarket");
+    input.value = value;
+    $("marketTriggerLabel").textContent = label;
+    $("marketTriggerIcon").innerHTML = MARKET_ICONS[MARKET_ICON_FOR_VALUE[value] || "globe-alt"];
+    $("marketMenu").querySelectorAll('[role="option"]').forEach((opt) => {
+      opt.setAttribute("aria-selected", opt.dataset.value === value ? "true" : "false");
+    });
+    syncPrimaryMarketOther();
+  }
+
   function syncPrimaryMarketOther() {
     const other = $("primaryMarket").value === "other";
     $("primaryMarketOtherField").hidden = !other;
     if (!other) $("primaryMarketOther").value = "";
   }
-  $("primaryMarket").addEventListener("change", syncPrimaryMarketOther);
-  syncPrimaryMarketOther();
+
+  function closeMarketMenu() {
+    const picker = $("marketPicker");
+    picker.classList.remove("open");
+    $("marketTrigger").setAttribute("aria-expanded", "false");
+    $("marketMenu").hidden = true;
+  }
+
+  function openMarketMenu() {
+    const picker = $("marketPicker");
+    picker.classList.add("open");
+    $("marketTrigger").setAttribute("aria-expanded", "true");
+    $("marketMenu").hidden = false;
+  }
+
+  paintMarketIcons();
+  setMarketValue("global", "Global");
+
+  $("marketTrigger").addEventListener("click", () => {
+    if ($("marketMenu").hidden) openMarketMenu();
+    else closeMarketMenu();
+  });
+
+  $("marketMenu").addEventListener("click", (e) => {
+    const opt = e.target.closest('[role="option"]');
+    if (!opt) return;
+    setMarketValue(opt.dataset.value, opt.dataset.label);
+    closeMarketMenu();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!$("marketPicker").contains(e.target)) closeMarketMenu();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("marketMenu").hidden) {
+      closeMarketMenu();
+      $("marketTrigger").focus();
+    }
+  });
 
   refreshByokStatus();
   $("progress").hidden = true;

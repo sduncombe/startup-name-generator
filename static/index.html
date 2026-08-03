@@ -70,18 +70,56 @@
               <p class="field-hint">Brandable (default) favors invented and abstract names you can grow into. Descriptive leans toward names that say what you do.</p>
             </fieldset>
             <div class="grid-2">
-              <label class="field">
-                <span class="label">Primary market</span>
-                <select name="primary_market" id="primaryMarket">
-                  <option value="global" selected>🌍 Global</option>
-                  <option value="us">🇺🇸 United States</option>
-                  <option value="ca">🇨🇦 Canada</option>
-                  <option value="uk">🇬🇧 United Kingdom</option>
-                  <option value="eu">🇪🇺 Europe</option>
-                  <option value="au">🇦🇺 Australia</option>
-                  <option value="other">Other…</option>
-                </select>
-              </label>
+              <div class="field">
+                <span class="label" id="primaryMarketLabel">Primary market</span>
+                <input type="hidden" name="primary_market" id="primaryMarket" value="global" />
+                <div class="market-picker" id="marketPicker">
+                  <button
+                    type="button"
+                    class="market-trigger"
+                    id="marketTrigger"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-labelledby="primaryMarketLabel marketTriggerLabel"
+                  >
+                    <span class="market-icon" id="marketTriggerIcon" aria-hidden="true"></span>
+                    <span class="market-trigger-text" id="marketTriggerLabel">Global</span>
+                    <svg class="market-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <ul class="market-menu" id="marketMenu" role="listbox" aria-labelledby="primaryMarketLabel" hidden>
+                    <li role="option" data-value="global" data-label="Global" aria-selected="true">
+                      <span class="market-icon" data-icon="globe-alt"></span>
+                      <span>Global</span>
+                    </li>
+                    <li role="option" data-value="us" data-label="United States" aria-selected="false">
+                      <span class="market-icon" data-icon="globe-americas"></span>
+                      <span>United States</span>
+                    </li>
+                    <li role="option" data-value="ca" data-label="Canada" aria-selected="false">
+                      <span class="market-icon" data-icon="globe-americas"></span>
+                      <span>Canada</span>
+                    </li>
+                    <li role="option" data-value="uk" data-label="United Kingdom" aria-selected="false">
+                      <span class="market-icon" data-icon="globe-europe"></span>
+                      <span>United Kingdom</span>
+                    </li>
+                    <li role="option" data-value="eu" data-label="Europe" aria-selected="false">
+                      <span class="market-icon" data-icon="globe-europe"></span>
+                      <span>Europe</span>
+                    </li>
+                    <li role="option" data-value="au" data-label="Australia" aria-selected="false">
+                      <span class="market-icon" data-icon="globe-asia"></span>
+                      <span>Australia</span>
+                    </li>
+                    <li role="option" data-value="other" data-label="Other" aria-selected="false">
+                      <span class="market-icon" data-icon="ellipsis"></span>
+                      <span>Other</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
               <label class="field" id="primaryMarketOtherField" hidden>
                 <span class="label">Which market?</span>
                 <input name="primary_market_other" id="primaryMarketOther" type="text" maxlength="120" placeholder="e.g. Brazil, Japan, MENA" />

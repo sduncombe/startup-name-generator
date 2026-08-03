@@ -332,6 +332,100 @@ body.has-results .app { padding-top: 40px; }
   line-height: 1.45;
 }
 
+/* Primary market picker: Heroicons-style SVGs, no emoji */
+.market-picker { position: relative; }
+
+.market-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.market-trigger:hover { border-color: rgba(255, 255, 255, 0.14); }
+
+.market-trigger:focus-visible,
+.market-picker.open .market-trigger {
+  outline: none;
+  border-color: rgba(124, 136, 232, 0.55);
+  box-shadow: 0 0 0 3px rgba(94, 106, 210, 0.15);
+}
+
+.market-trigger-text { flex: 1; text-align: left; }
+
+.market-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--faint);
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.market-picker.open .market-chevron { transform: rotate(180deg); }
+
+.market-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  flex: none;
+}
+
+.market-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.market-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.market-menu[hidden] { display: none; }
+
+.market-menu li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.market-menu li:hover,
+.market-menu li[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.market-menu li[aria-selected="true"] .market-icon {
+  color: var(--accent, #8b95e8);
+}
+
 .label {
   display: block;
   margin-bottom: 5px;
