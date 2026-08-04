@@ -8,7 +8,15 @@ The production app now runs **on seanduncombe.com**:
 
 **[https://seanduncombe.com/apps/namegen](https://seanduncombe.com/apps/namegen)**
 
-That version is a Nitro/TypeScript port inside [`duncombe-web`](https://github.com/sduncombe/duncombe-web). This repository remains the MIT-licensed Python/FastAPI reference and a self-hostable standalone deploy.
+That version is a Nitro/TypeScript engine inside [`duncombe-web`](https://github.com/sduncombe/duncombe-web). This repository remains the MIT-licensed Python/FastAPI reference and a self-hostable standalone deploy.
+
+## Scope: this is the V1 reference
+
+This repository is intentionally frozen at the **V1 engine**: the four naming styles below, deterministic scoring, the radio test, and domain/conflict/trademark screening. It receives correctness fixes, not feature parity.
+
+The production engine has since been rebuilt as **V2**, which adds seventeen aesthetic naming philosophies with weighted linguistic root banks (Norse, Celtic, Latin, Greek, and more), a brandability composite presented as honest qualitative bands, three-tier linguistic provenance labels, cross-market pronunciation testing, phonetic family generation, and score-derived explanations for every candidate. Those mechanisms — and the reasoning behind them — are documented in the engineering record: **[Namegen V2: Engineering a Brand-Quality Naming Engine](https://seanduncombe.com/projects/building-namegen)**. The V2 tuning (weights, thresholds, benchmark corpus, lexicon additions, prompts) is not published here.
+
+If you self-host this reference, expect V1 behavior: the live app will generate and rank differently.
 
 ## Product experience
 

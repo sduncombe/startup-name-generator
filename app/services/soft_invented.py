@@ -44,7 +44,10 @@ _PRODUCT_INVENTED = re.compile(
 )
 
 # Soft Latinate coinage tails that dominate AI naming sludge.
-_SOFT_COINAGE_TAIL = re.compile(r"(ora|ura|iva|uva|eva|ova)$")
+# -ello/-illo joins the list: our own negative examples include Dwello, and
+# the scorer has to agree with the manifesto. Real words (cello, armadillo)
+# are protected by the real_word_set check before this fires.
+_SOFT_COINAGE_TAIL = re.compile(r"(ora|ura|iva|uva|eva|ova|ello|illo)$")
 
 
 def is_soft_invented(name: str) -> bool:
