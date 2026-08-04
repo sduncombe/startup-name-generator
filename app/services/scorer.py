@@ -134,6 +134,10 @@ def _pronounceability(key: str, syll: int, syll_cfg: dict) -> float:
     score -= max(0, consecutive_consonants(key) - 2) * 15
     if re.search(r"q(?!u)|x|z{2}", key):
         score -= 20
+    # A name with no vowels (strngth) or no consonants (eaiou) is not a word
+    # anyone can say — no other component should be able to rescue it.
+    if not re.search(r"[aeiouy]", key) or not re.search(r"[bcdfghjklmnpqrstvwxz]", key):
+        score -= 45
     return max(0, min(100, score))
 
 

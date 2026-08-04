@@ -465,8 +465,14 @@ def credibility_score(name: str, *, method: str = "") -> float:
     syll = syllable_count(key)
     n = len(key)
 
+    # Soft-invented covers the banned-name list — a name the manifesto
+    # explicitly rejects must not survive on shape points alone.
     if is_soft_invented(key):
-        score -= 42
+        score -= 60
+
+    # No consonants (eaiou) or no vowels (strngth): not a plausible word.
+    if not re.search(r"[bcdfghjklmnpqrstvwxz]", key) or not re.search(r"[aeiouy]", key):
+        score -= 45
 
     if key in lexicon_words() or key in real_word_set():
         score += 30
@@ -515,6 +521,17 @@ def credibility_score(name: str, *, method: str = "") -> float:
 
     rare = sum(1 for ch in key if ch in "qjxz")
     score -= rare * 5
+
+    # Tech-buzzword tails (HomeAI / VisionXR class) are the exact sludge this
+    # tool exists to avoid — penalize unconditionally, not only when the user
+    # remembered to put them in the avoid list.
+    if (
+        len(key) > 4
+        and re.search(r"(ai|xr|vr|gpt)$", key)
+        and key not in lexicon_words()
+        and key not in real_word_set()
+    ):
+        score -= 30
 
     return max(0.0, min(100.0, score))
 
